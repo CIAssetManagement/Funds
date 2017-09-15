@@ -9,14 +9,30 @@ namesprecios <- as.character(unique(precios$Instrumento))
 
 fluidPage(
   
-  titlePanel("Simulador de Operaciones"),
+  tags$head(
+    tags$style(HTML("
+                    @import url('https://fonts.googleapis.com/css?family=Roboto+Slab');"),
+                    '#sidebar{font-family:"Roboto Slab", serif;color: #fefefe;background-color:#16620a} 
+                    body{background-color:#4fa22a')) ,
+  
+  headerPanel(h1("Simulador de operaciones", 
+                 style = "font-family: 'Roboto Slab', serif;
+                 font-weight: 500; line-height: 1.1; 
+                 color: #fefefe;")),
   
   sidebarPanel(
     
-    selectInput('fondo', 'Fondos', namesfondos),
-    uiOutput('snpselect'),
-    #Se debe cambiar de acuerdo al prospecto de cada fondo.
-    selectInput('instrumentoc', 'Compra Instrumento', namesprecios)
+    id="sidebar",
     
-  )
-)
+    selectInput('fondo', 'Fondos', namesfondos),
+    
+    #Venta de instrumentos
+    uiOutput('snpselect'),
+    bootstrapPage(
+      div(style="display:inline-block",numericInput('montov','Monto', value = 0,min = 0)),
+      div(style="display:inline-block",numericInput('titulosv','Títulos', value = 0, min = 0))),
+    
+    #Se debe cambiar de acuerdo al prospecto de cada fondo.
+    selectInput('instrumentoc', 'Compra Instrumento', namesprecios),
+    div(style="display:inline-block",numericInput('montoc','Monto', value = 0,min = 0)),
+    div(style="display:inline-block",numericInput('titulosc','Títulos', value = 0, min = 0))))
