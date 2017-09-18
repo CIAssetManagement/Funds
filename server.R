@@ -10,10 +10,16 @@ function(input, output) {
     precios
   })
   
-  
-  output$snpselect <- renderUI({
+  #Instrumentos que se pueden vender.
+  output$venta <- renderUI({
     selected_value <- input$fondo
-    selectizeInput('instrumentov', 'Venta Instrumento', instrumentoventa(fondos,selected_value))
+    selectizeInput('instrumentov', 'Venta de Instrumento', instrumentoventa(fondos,selected_value))
+  })
+  
+  #Instrumentos que se pueden comprar.
+  output$venta <- renderUI({
+    selected_value <- input$fondo
+    selectizeInput('instrumentoc', 'Compra de Instrumento', instrumentocompra(precios,selected_value))
   })
   
   #output$plot <- renderPlot({
