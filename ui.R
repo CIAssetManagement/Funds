@@ -27,12 +27,12 @@ fluidPage(
     selectInput('fondo', 'Fondos', namesfondos),
     
     #Venta de instrumentos
-    uiOutput('snpselect'),
+    uiOutput('venta'),
     bootstrapPage(
       div(style="display:inline-block",numericInput('montov','Monto', value = 0,min = 0)),
       div(style="display:inline-block",numericInput('titulosv','Títulos', value = 0, min = 0))),
     
     #Se debe cambiar de acuerdo al prospecto de cada fondo.
-    selectInput('instrumentoc', 'Compra Instrumento', namesprecios),
+    uiOutput('compra'),
     div(style="display:inline-block",numericInput('montoc','Monto', value = 0,min = 0)),
     div(style="display:inline-block",numericInput('titulosc','Títulos', value = 0, min = 0))))

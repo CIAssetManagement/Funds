@@ -17,7 +17,7 @@ function(input, output) {
   })
   
   #Instrumentos que se pueden comprar.
-  output$venta <- renderUI({
+  output$compra <- renderUI({
     selected_value <- input$fondo
     selectizeInput('instrumentoc', 'Compra de Instrumento', instrumentocompra(precios,selected_value))
   })
