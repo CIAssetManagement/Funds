@@ -32,7 +32,19 @@ fluidPage(
       div(style="display:inline-block",numericInput('montov','Monto', value = 0,min = 0)),
       div(style="display:inline-block",numericInput('titulosv','Títulos', value = 0, min = 0))),
     
+    #Boton para agregar los valores de venta a la tabla.
+    actionButton("addv","Agregar"),
+
     #Se debe cambiar de acuerdo al prospecto de cada fondo.
     uiOutput('compra'),
     div(style="display:inline-block",numericInput('montoc','Monto', value = 0,min = 0)),
-    div(style="display:inline-block",numericInput('titulosc','Títulos', value = 0, min = 0))))
+    div(style="display:inline-block",numericInput('titulosc','Títulos', value = 0, min = 0)),
+
+    #Boton para agregar los valores de compra a la tabla.
+    actionButton("addc","Agregar")),
+  
+  mainPanel(
+    DT::dataTableOutput("prueba")
+  )
+)
+
