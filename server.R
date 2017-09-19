@@ -4,6 +4,7 @@ library(ggplot2)
 function(input, output) {
   
   precios <- read.csv("Precios.csv",header = TRUE)
+  precios <- cbind(precios,Tipo = sub("-.*","",precios$Instrumento))
   fondos <- read.csv("Fondos.csv",header = TRUE)
   
   dataset <- reactive({
