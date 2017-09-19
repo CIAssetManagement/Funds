@@ -1,10 +1,8 @@
 library(shiny)
 library(ggplot2)
 
-precios <- read.csv("Precios.csv",header = TRUE)
 fondos <- read.csv("Fondos.csv",header = TRUE)
 namesfondos <- as.character(unique(fondos$Fondo))
-namesprecios <- as.character(unique(precios$Instrumento))
 
 
 fluidPage(

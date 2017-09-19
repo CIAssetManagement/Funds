@@ -13,6 +13,6 @@ instrumentoventa <- function(fondos,nombre){
 }
 #Function to supply elements in the market of a fund.
 inst <- function(precios, include){
-  precios$Instrumento[ a %in% include]
+  precios$Instrumento[ precios$Tipo %in% include]
 }
 
