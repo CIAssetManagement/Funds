@@ -21,7 +21,12 @@ function(input, output) {
   #Instrumentos que se pueden comprar.
   output$compra <- renderUI({
     selected_value <- input$fondo
-    selectizeInput('instrumentoc', 'Compra de Instrumento', instrumentocompra(precios,selected_value))
+    switch(selected_value,
+           "+CIGUB"=selectizeInput('instrumentoc', 'Compra de Instrumento de Deuda', instrumentocompra(precios,selected_value)),
+           "+CIGUMP"=selectizeInput('instrumentoc', 'Compra de Instrumento de Deuda', instrumentocompra(precios,selected_value)),
+           "+CIGULP"=selectizeInput('instrumentoc', 'Compra de Instrumento de Deuda', instrumentocompra(precios,selected_value))
+           )
+    
   })
   
   #eventReactive()

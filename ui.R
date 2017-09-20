@@ -26,9 +26,8 @@ fluidPage(
     
     #Venta de instrumentos
     uiOutput('venta'),
-    bootstrapPage(
       div(style="display:inline-block",numericInput('montov','Monto', value = 0,min = 0)),
-      div(style="display:inline-block",numericInput('titulosv','Títulos', value = 0, min = 0))),
+      div(style="display:inline-block",numericInput('titulosv','Títulos', value = 0, min = 0)),
     
     #Boton para agregar los valores de venta a la tabla.
     actionButton("addv","Agregar"),
