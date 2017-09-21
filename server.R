@@ -8,10 +8,6 @@ function(input, output) {
   precios <- cbind(precios,Tipo = sub("-.*","",precios$Instrumento))
   fondos <- read.csv("Fondos.csv",header = TRUE)
   
-  dataset <- reactive({
-    precios
-  })
-  
   #Instrumentos que se pueden vender.
   output$venta <- renderUI({
     selected_value <- input$fondo
@@ -24,8 +20,22 @@ function(input, output) {
     selectizeInput('instrumentoc', 'Compra de Instrumento', instrumentocompra(precios,selected_value))
   })
   
-  #eventReactive()
+  #Tabla de intrumentos venta
+  proxy = dataTableProxy('prueba')
   
-  output$prueba = DT::renderDataTable({fondos})
+
+  dft <- eventReactive(input$addv,{
+    fond <- input$fondo
+    instrumento <- input$instrumentov
+    
+    monto <- input$montov
+    titulos <- input$titulosv
+
+    new_row <- data.frame(fond,instrumento,monto, titulos)
+    #new_row <- proxy %>% DT::addRow(new_row)
+    return(new_row)
+  })
+  
+  output$prueba = DT::renderDataTable({dft()})
 }
 
