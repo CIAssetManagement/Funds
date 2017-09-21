@@ -3,6 +3,8 @@ library(ggplot2)
 
 fondos <- read.csv("Fondos.csv",header = TRUE)
 namesfondos <- as.character(unique(fondos$Fondo))
+precios <- read.csv("Precios.csv",header = TRUE)
+precios <- cbind(precios,Tipo = sub("-.*","",precios$Instrumento))
 
 
 fluidPage(
@@ -26,17 +28,16 @@ fluidPage(
     
     #Venta de instrumentos
     uiOutput('venta'),
-    bootstrapPage(
       div(style="display:inline-block",numericInput('montov','Monto', value = 0,min = 0)),
-      div(style="display:inline-block",numericInput('titulosv','Títulos', value = 0, min = 0))),
+      div(style="display:inline-block",numericInput('titulosv','Títulos', value = 0, min = 0)),
     
     #Boton para agregar los valores de venta a la tabla.
     actionButton("addv","Agregar"),
 
-    #Se debe cambiar de acuerdo al prospecto de cada fondo.
-    uiOutput('compra'),
-    div(style="display:inline-block",numericInput('montoc','Monto', value = 0,min = 0)),
-    div(style="display:inline-block",numericInput('titulosc','Títulos', value = 0, min = 0)),
+    #Compra de instrumentos 
+    selectizeInput('instrumentoc',label ='Compra de Instrumento',choices = NULL),
+    div(style="display:inline-block",numericInput('montog','Monto', value = 0,min = 0)),
+    div(style="display:inline-block",numericInput('titulosg','Títulos', value = 0, min = 0)),
 
     #Boton para agregar los valores de compra a la tabla.
     actionButton("addc","Agregar")),
