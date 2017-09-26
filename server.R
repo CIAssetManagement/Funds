@@ -85,17 +85,18 @@ tituloscc <- function(titulos,precio){
 }
 
 ###precio venta por instrumento
-preciovv <- reactive({fondos$Precio[input$instrumentov %in% fondos$Emisora]})
+preciovv <- reactive({preciov <- fondos$Precio[match(input$instrumentov,fondos$Emisora)]
+            return(preciov)})
 ###precio compra por instrumento
-preciocc <- reactive({precios$Precio[input$instrumentoc %in% precios$Instrumento]})
+preciocc <- reactive({precioc <- precios$Precio[match(input$instrumentoc,precios$Instrumento)]
+            return(precioc)})
 
-preciop=10
 #Data frame para alimentar la tabla con los instrumentos venta
   dfv <- eventReactive(input$addv,{
     fond <- input$fondo
     instrumento <- input$instrumentov
-    monto <- montovv(input$montov,preciop)
-    titulos <- titulosvv(input$titulosv,preciop)
+    monto <- montovv(input$montov,preciovv())
+    titulos <- titulosvv(input$titulosv,preciovv())
 
     new_rowv <- data.frame(fond,instrumento,monto,titulos)
     #new_row <- proxy %>% DT::addRow(new_row)
@@ -106,8 +107,8 @@ preciop=10
   dfc <- eventReactive(input$addc,{
     fondc <- input$fondo
     instrumentocc <- input$instrumentoc
-    montoc <- montocc(input$montog,preciop)
-    titulosc <- tituloscc(input$titulosg,preciop)
+    montoc <- montocc(input$montog,preciocc())
+    titulosc <- tituloscc(input$titulosg,preciocc())
     
     new_rowc <- data.frame(fondc,instrumentocc,montoc, titulosc)
     #new_row <- proxy %>% DT::addRow(new_row)
