@@ -1,6 +1,7 @@
 library(shiny)
 library(ggplot2)
 library(DT)
+library(dplyr)
 
 #Bases de datos
 precios <- read.csv("Precios.csv",header = TRUE)
@@ -40,23 +41,79 @@ function(input, output, session) {
   })
 
   updateSelectizeInput(session, 'instrumentoc', choices = precios$Instrumento, server = TRUE)
-  
-  #Tabla de intrumentos venta
-  proxy = dataTableProxy('prueba')
-  
 
-  dft <- eventReactive(input$addv,{
+#Calculo del monto o titulos venta
+montovv <- function(monto, precio){
+    if(monto == 0){
+      monto = input$titulosv*precio
+    }
+    else{
+      monto = input$montov
+    }
+  return(monto)
+  }
+titulosvv <- function(titulos,precio){
+    if(titulos == 0){
+      titulos = input$montov/precio
+    }
+    else{
+      titulos = input$titulosv
+    }
+
+    return(titulos)
+}
+
+#Calculo del monto o titulos compra
+montocc <- function(monto, precio){
+  if(monto == 0){
+    monto = input$titulosg*precio
+  }
+  else{
+    monto = input$montog
+  }
+  return(monto)
+}
+tituloscc <- function(titulos,precio){
+  if(titulos == 0){
+    titulos = input$montog/precio
+  }
+  else{
+    titulos = input$titulosg
+  }
+  
+  return(titulos)
+}
+
+###precio venta por instrumento
+preciovv <- reactive({fondos$Precio[input$instrumentov %in% fondos$Emisora]})
+###precio compra por instrumento
+preciocc <- reactive({precios$Precio[input$instrumentoc %in% precios$Instrumento]})
+
+preciop=10
+#Data frame para alimentar la tabla con los instrumentos venta
+  dfv <- eventReactive(input$addv,{
     fond <- input$fondo
     instrumento <- input$instrumentov
-    
-    monto <- input$montov
-    titulos <- input$titulosv
+    monto <- montovv(input$montov,preciop)
+    titulos <- titulosvv(input$titulosv,preciop)
 
-    new_row <- data.frame(fond,instrumento,monto, titulos)
+    new_rowv <- data.frame(fond,instrumento,monto,titulos)
     #new_row <- proxy %>% DT::addRow(new_row)
-    return(new_row)
+    return(new_rowv)
   })
-  
-  output$prueba = DT::renderDataTable({dft()})
+
+#Data frame para alimentar la tabla con los instrumentos compra
+  dfc <- eventReactive(input$addc,{
+    fondc <- input$fondo
+    instrumentocc <- input$instrumentoc
+    montoc <- montocc(input$montog,preciop)
+    titulosc <- tituloscc(input$titulosg,preciop)
+    
+    new_rowc <- data.frame(fondc,instrumentocc,montoc, titulosc)
+    #new_row <- proxy %>% DT::addRow(new_row)
+    return(new_rowc)
+  })
+  output$ventav = DT::renderDataTable({dfv()})
+  output$prueba = DT::renderDataTable({dfc()})
 }
 

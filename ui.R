@@ -41,8 +41,10 @@ fluidPage(
 
     #Boton para agregar los valores de compra a la tabla.
     actionButton("addc","Agregar")),
+   
   
   mainPanel(
+    DT::dataTableOutput("ventav"),
     DT::dataTableOutput("prueba")
   )
 )
