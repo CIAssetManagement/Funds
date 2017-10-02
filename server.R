@@ -18,14 +18,24 @@ instrumentoventa <- function(fondos,nombre){
 
 #Lista de instrumentos que los fondos pueden comprar.
 instrumentocompra <- function(precios,nombre, mercados){
+  deudagub <- precios$Tipo %in% mercados$deudagub
+  deudacorp <- precios$Tipo %in% mercados$deudacorp
+  stocksmx <- precios$Tipo %in% mercados$stocksmx
+  stocksint <- precios$Tipo %in% mercados$stocksint
+  fondos <- precios$Tipo %in% mercados$fondos
+  deudausd <- precios$Tipo %in% mercados$deudausd
+  pagares <- precios$Tipo %in% mercados$pagares
+  usd <- precios$Tipo %in% mercados$usd
+  trac <- precios$Tipo %in% mercados$trac
+  
   valores <- switch(nombre,
                     "+CIGUB"={precios$Instrumento[precios$Tipo %in% mercados$deudagub]},
                     "+CIGUMP"={precios$Instrumento[precios$Tipo %in% mercados$deudagub]},
                     "+CIGULP"={precios$Instrumento[precios$Tipo %in% mercados$deudagub]},
-                    "+CIPLUS"={},
-                    "+CIBOLS"={},
-                    "+CIUSD"={},
-                    "+CIEQUS"={}
+                    "+CIPLUS"={precios$Instrumento[c(deudagub,deudacorp,pagares)]},
+                    "+CIBOLS"={precios$Instrumento[c(deudagub,stocksmx,stocksint,fondos,trac)]},
+                    "+CIUSD"={precios$Instrumento[c(usd,trac)]},
+                    "+CIEQUS"={precios$Instrumento[c(stocksint,trac,usd)]}
   )
   valores <- unique(valores)
   return(valores)
@@ -34,13 +44,13 @@ instrumentocompra <- function(precios,nombre, mercados){
 #Función servidor
 function(input, output, session) {
   
-  #Instrumentos que se pueden vender.
-  output$venta <- renderUI({
+  observe({
     selected_value <- input$fondo
-    selectizeInput('instrumentov',label ='Venta de Instrumento',instrumentoventa(fondos,selected_value))
+    #Instrumentos que se pueden vender.
+    updateSelectizeInput(session,inputId='instrumentov',choices=instrumentoventa(fondos,selected_value))
+    #Instrumentos que se pueden comprar.
+    updateSelectizeInput(session,inputId='instrumentoc',choices=instrumentocompra(precios,selected_value,mercados))
   })
-  
-  updateSelectizeInput(session, 'instrumentoc', choices = precios$Instrumento, server = TRUE)
   
   #Calculo del monto o titulos venta
   montovv <- function(monto, precio){
