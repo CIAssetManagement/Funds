@@ -44,7 +44,7 @@ instrumentocompra <- function(precios,nombre, mercados){
 
 #Función servidor
 function(input, output, session) {
- 
+  
   observe({
     selected_value <- input$fondo
     #Instrumentos que se pueden vender.
@@ -53,15 +53,9 @@ function(input, output, session) {
     updateSelectizeInput(session,inputId='instrumentoc',choices=instrumentocompra(precios,selected_value,mercados))
   })
   
-<<<<<<< HEAD
-#Calculo del monto o titulos venta
-montovv <- function(monto, precio){
-=======
-  updateSelectizeInput(session, 'instrumentoc', choices = precios$Instrumento, server = TRUE)
-  
   #Calculo del monto o titulos venta
   montovv <- function(monto, precio){
->>>>>>> ac723018c24c50431d9e8349a55a8c535493c143
+    
     if(monto == 0){
       monto = input$titulosv*precio
     }
