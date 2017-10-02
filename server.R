@@ -9,7 +9,6 @@ precios <- cbind(precios,Tipo = sub("-.*","",precios$Instrumento))
 fondos <- read.csv("Fondos.csv",header = TRUE)
 #Tener cuidado si existe un tipo de valor z
 mercados <- read.csv("mercados.csv",header=TRUE,stringsAsFactors = FALSE)
-precios1 <-  precios
 
 #Lista de instrumentos que los fondos pueden vender.
 instrumentoventa <- function(fondos,nombre){
