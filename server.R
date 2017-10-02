@@ -106,17 +106,31 @@ function(input, output, session) {
     return(rowdatav)
   })
   
+  #Mensaje de error para la venta
+  # observeEvent(input$addv, {
+  #   showModal(modalDialog(title = "ERROR",paste0("No se puede vender ",input$instrumentov," sobrepsa el VaR permitido")))
+  # })
+  
+  #Mensaje de error para la compra
+  # observeEvent(input$addc, {
+  #   showModal(modalDialog(title = "ERROR",paste0("No se puede comprar ",input$instrumentoc," sobrepsa el VaR permitido")))
+  # })
+  
   #Data frame para alimentar la tabla con los instrumentos compra
   dfc <- eventReactive(input$addc,{
     fondc <- input$fondo
+    validate(need(input$instrumentoc != "", "Favor de seleccionar un instrumento"))
     instrumentocc <- input$instrumentoc
     montoc <- montocc(input$montog,preciocc())
     titulosc <- tituloscc(input$titulosg,preciocc())
     
-    new_rowc <- data.frame(Fondo=fondc,Instrumento=instrumentocc,Monto=montoc,Titulos=titulosc)
+    new_rowc <- data.frame(Fondo=fondc,Instrumento=instrumentocc,Monto=montoc,Titulos= titulosc)
     rowdatac <<- rbind(rowdatac,new_rowc)
     return(rowdatac)
   })
+  
+  output$ind <- renderTable({dfv()})
+  
   output$ventav = DT::renderDataTable({dfv()})
   output$comprac = DT::renderDataTable({dfc()})
 }

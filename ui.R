@@ -11,7 +11,8 @@ fluidPage(
   
   tags$head(
     tags$style(HTML("
-                    @import url('https://fonts.googleapis.com/css?family=Roboto+Slab');"),
+                    @import url('https://fonts.googleapis.com/css?family=Roboto+Slab');
+                    .shiny-output-error-validation {color: #FEFEFE; font-size: 150%}"),
                     '#sidebar{font-family:"Roboto Slab", serif;color: #fefefe;background-color:#16620a} 
                     body{background-color:#4fa22a')) ,
   
@@ -40,8 +41,10 @@ fluidPage(
     div(style="display:inline-block",numericInput('titulosg','Títulos', value = 0, min = 0)),
 
     #Boton para agregar los valores de compra a la tabla.
-    actionButton("addc","Agregar")),
-   
+    div(style="display:inline-block",actionButton("addc","Agregar")),
+    
+    #Div indicadores
+    div(style="align:left; position:relative; top:40px;",tableOutput('ind'))),
   
   mainPanel(
     DT::dataTableOutput("ventav"),
