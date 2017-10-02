@@ -45,7 +45,7 @@ fluidPage(
   
   mainPanel(
     DT::dataTableOutput("ventav"),
-    DT::dataTableOutput("prueba")
+    DT::dataTableOutput("comprac")
   )
 )
 

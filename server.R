@@ -39,82 +39,84 @@ function(input, output, session) {
     selected_value <- input$fondo
     selectizeInput('instrumentov',label ='Venta de Instrumento',instrumentoventa(fondos,selected_value))
   })
-
+  
   updateSelectizeInput(session, 'instrumentoc', choices = precios$Instrumento, server = TRUE)
-
-#Calculo del monto o titulos venta
-montovv <- function(monto, precio){
+  
+  #Calculo del monto o titulos venta
+  montovv <- function(monto, precio){
     if(monto == 0){
       monto = input$titulosv*precio
     }
     else{
       monto = input$montov
     }
-  return(monto)
+    return(monto)
   }
-titulosvv <- function(titulos,precio){
+  titulosvv <- function(titulos,precio){
     if(titulos == 0){
       titulos = input$montov/precio
     }
     else{
       titulos = input$titulosv
     }
-
+    
     return(titulos)
-}
-
-#Calculo del monto o titulos compra
-montocc <- function(monto, precio){
-  if(monto == 0){
-    monto = input$titulosg*precio
-  }
-  else{
-    monto = input$montog
-  }
-  return(monto)
-}
-tituloscc <- function(titulos,precio){
-  if(titulos == 0){
-    titulos = input$montog/precio
-  }
-  else{
-    titulos = input$titulosg
   }
   
-  return(titulos)
-}
-
-###precio venta por instrumento
-preciovv <- reactive({preciov <- fondos$Precio[match(input$instrumentov,fondos$Emisora)]
-            return(preciov)})
-###precio compra por instrumento
-preciocc <- reactive({precioc <- precios$Precio[match(input$instrumentoc,precios$Instrumento)]
-            return(precioc)})
-
-#Data frame para alimentar la tabla con los instrumentos venta
+  #Calculo del monto o titulos compra
+  montocc <- function(monto, precio){
+    if(monto == 0){
+      monto = input$titulosg*precio
+    }
+    else{
+      monto = input$montog
+    }
+    return(monto)
+  }
+  tituloscc <- function(titulos,precio){
+    if(titulos == 0){
+      titulos = input$montog/precio
+    }
+    else{
+      titulos = input$titulosg
+    }
+    
+    return(titulos)
+  }
+  
+  ###precio venta por instrumento
+  preciovv <- reactive({preciov <- fondos$Precio[match(input$instrumentov,fondos$Emisora)]
+  return(preciov)})
+  ###precio compra por instrumento
+  preciocc <- reactive({precioc <- precios$Precio[match(input$instrumentoc,precios$Instrumento)]
+  return(precioc)})
+  
+  rowdatac<- c()
+  rowdatav <- c()
+  
+  #Data frame para alimentar la tabla con los instrumentos venta
   dfv <- eventReactive(input$addv,{
     fond <- input$fondo
     instrumento <- input$instrumentov
     monto <- montovv(input$montov,preciovv())
     titulos <- titulosvv(input$titulosv,preciovv())
-
-    new_rowv <- data.frame(fond,instrumento,monto,titulos)
-    #new_row <- proxy %>% DT::addRow(new_row)
-    return(new_rowv)
+    
+    new_rowv <- data.frame(Fondo=fond,Instrumento=instrumento,Monto=monto,Titulos=titulos)
+    rowdatav <<- rbind(rowdatav,new_rowv)
+    return(rowdatav)
   })
-
-#Data frame para alimentar la tabla con los instrumentos compra
+  
+  #Data frame para alimentar la tabla con los instrumentos compra
   dfc <- eventReactive(input$addc,{
     fondc <- input$fondo
     instrumentocc <- input$instrumentoc
     montoc <- montocc(input$montog,preciocc())
     titulosc <- tituloscc(input$titulosg,preciocc())
     
-    new_rowc <- data.frame(fondc,instrumentocc,montoc, titulosc)
-    #new_row <- proxy %>% DT::addRow(new_row)
-    return(new_rowc)
+    new_rowc <- data.frame(Fondo=fondc,Instrumento=instrumentocc,Monto=montoc,Titulos=titulosc)
+    rowdatac <<- rbind(rowdatac,new_rowc)
+    return(rowdatac)
   })
   output$ventav = DT::renderDataTable({dfv()})
-  output$prueba = DT::renderDataTable({dfc()})
+  output$comprac = DT::renderDataTable({dfc()})
 }
-
