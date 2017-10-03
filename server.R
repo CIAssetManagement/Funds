@@ -18,24 +18,14 @@ instrumentoventa <- function(fondos,nombre){
 
 #Lista de instrumentos que los fondos pueden comprar.
 instrumentocompra <- function(precios,nombre, mercados){
-  deudagub <- precios$Tipo %in% mercados$deudagub
-  deudacorp <- precios$Tipo %in% mercados$deudacorp
-  stocksmx <- precios$Tipo %in% mercados$stocksmx
-  stocksint <- precios$Tipo %in% mercados$stocksint
-  fondos <- precios$Tipo %in% mercados$fondos
-  deudausd <- precios$Tipo %in% mercados$deudausd
-  pagares <- precios$Tipo %in% mercados$pagares
-  usd <- precios$Tipo %in% mercados$usd
-  trac <- precios$Tipo %in% mercados$trac
-  
   valores <- switch(nombre,
-                    "+CIGUB"={precios$Instrumento[deudagub]},
-                    "+CIGUMP"={precios$Instrumento[deudagub]},
-                    "+CIGULP"={precios$Instrumento[deudagub]},
-                    "+CIPLUS"={precios$Instrumento[c(deudagub,deudacorp,pagares)]},
-                    "+CIBOLS"={precios$Instrumento[c(deudagub,stocksmx,stocksint,fondos,trac)]},
-                    "+CIUSD"={precios$Instrumento[c(usd,trac)]},
-                    "+CIEQUS"={precios$Instrumento[c(stocksint,trac,usd)]}
+                    "+CIGUB"={precios$Instrumento[precios$Tipo %in% mercados$deudagub]},
+                    "+CIGUMP"={precios$Instrumento[precios$Tipo %in% mercados$deudagub]},
+                    "+CIGULP"={precios$Instrumento[precios$Tipo %in% mercados$deudagub]},
+                    "+CIPLUS"={},
+                    "+CIBOLS"={},
+                    "+CIUSD"={},
+                    "+CIEQUS"={}
   )
   valores <- unique(valores)
   return(valores)
@@ -44,17 +34,16 @@ instrumentocompra <- function(precios,nombre, mercados){
 #Función servidor
 function(input, output, session) {
   
-  observe({
+  #Instrumentos que se pueden vender.
+  output$venta <- renderUI({
     selected_value <- input$fondo
-    #Instrumentos que se pueden vender.
-    updateSelectizeInput(session,inputId='instrumentov',choices=instrumentoventa(fondos,selected_value))
-    #Instrumentos que se pueden comprar.
-    updateSelectizeInput(session,inputId='instrumentoc',choices=instrumentocompra(precios,selected_value,mercados))
+    selectizeInput('instrumentov',label ='Venta de Instrumento',instrumentoventa(fondos,selected_value))
   })
+  
+  updateSelectizeInput(session, 'instrumentoc', choices = precios$Instrumento, server = TRUE)
   
   #Calculo del monto o titulos venta
   montovv <- function(monto, precio){
-    
     if(monto == 0){
       monto = input$titulosv*precio
     }
@@ -102,6 +91,7 @@ function(input, output, session) {
   preciocc <- reactive({precioc <- precios$Precio[match(input$instrumentoc,precios$Instrumento)]
   return(precioc)})
   
+  ################################## Data frame Instrumento ####################################  
   rowdatac<- c()
   rowdatav <- c()
   
@@ -117,16 +107,6 @@ function(input, output, session) {
     return(rowdatav)
   })
   
-  #Mensaje de error para la venta
-  # observeEvent(input$addv, {
-  #   showModal(modalDialog(title = "ERROR",paste0("No se puede vender ",input$instrumentov," sobrepsa el VaR permitido")))
-  # })
-  
-  #Mensaje de error para la compra
-  # observeEvent(input$addc, {
-  #   showModal(modalDialog(title = "ERROR",paste0("No se puede comprar ",input$instrumentoc," sobrepsa el VaR permitido")))
-  # })
-  
   #Data frame para alimentar la tabla con los instrumentos compra
   dfc <- eventReactive(input$addc,{
     fondc <- input$fondo
@@ -139,9 +119,26 @@ function(input, output, session) {
     rowdatac <<- rbind(rowdatac,new_rowc)
     return(rowdatac)
   })
+  ################################################################################################
   
-  output$ind <- renderTable({dfv()})
   
-  output$ventav = DT::renderDataTable({dfv()})
-  output$comprac = DT::renderDataTable({dfc()})
+  #################################### Mensaje Error ###############################################
+  #Mensaje de error para la venta
+  # observeEvent(input$addv, {
+  #   showModal(modalDialog(title = "ERROR",paste0("No se puede vender ",input$instrumentov," sobrepsa el VaR permitido")))
+  # })
+  
+  #Mensaje de error para la compra
+  # observeEvent(input$addc, {
+  #   showModal(modalDialog(title = "ERROR",paste0("No se puede comprar ",input$instrumentoc," sobrepsa el VaR permitido")))
+  # })
+  ##################################################################################################
+  
+  #Tabla instrumentos
+  output$ventav <- renderTable({dfv()})
+  output$comprac <- renderTable({dfc()})
+  
+  #Tabla indicadores
+  output$indv = DT::renderDataTable({dfv()})
+  output$indc = DT::renderDataTable({dfc()})
 }
