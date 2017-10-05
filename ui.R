@@ -28,7 +28,7 @@ fluidPage(
     selectInput('fondo', 'Fondos', namesfondos),
     
     #Venta de instrumentos
-    uiOutput('venta'),
+      selectizeInput('instrumentov',label ='Venta de Instrumento',choices = NULL),
       div(style="display:inline-block",numericInput('montov','Monto', value = 0,min = 0)),
       div(style="display:inline-block",numericInput('titulosv','Títulos', value = 0, min = 0)),
     
@@ -41,7 +41,7 @@ fluidPage(
     div(style="display:inline-block",numericInput('titulosg','Títulos', value = 0, min = 0)),
 
     #Boton para agregar los valores de compra a la tabla.
-    div(style="display:inline-block",actionButton("addc","Agregar")),
+    actionButton("addc","Agregar"),
     
     #Tabla instrumentos venta 
     div(style="align:left; position:relative; top:40px;",tableOutput('ventav')),
@@ -49,8 +49,8 @@ fluidPage(
     div(style="align:left; position:relative; top:40px;",tableOutput('comprac'))),
   
   mainPanel(
-    DT::dataTableOutput("ventav"),
-    DT::dataTableOutput("comprac")
+    DT::dataTableOutput("indv"),
+    DT::dataTableOutput("indc")
   )
 )
 
