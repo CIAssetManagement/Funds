@@ -33,7 +33,7 @@ fluidPage(
       div(style="display:inline-block",numericInput('titulosv','Títulos', value = 0, min = 0)),
     
     #Boton para agregar los valores de venta a la tabla.
-    actionButton("addv","Agregar"),
+    actionButton("addv","Agregar",),
 
     #Compra de instrumentos 
     selectizeInput('instrumentoc',label ='Compra de Instrumento',choices = NULL),
@@ -42,15 +42,22 @@ fluidPage(
 
     #Boton para agregar los valores de compra a la tabla.
     actionButton("addc","Agregar"),
+    actionButton("deleteSelected", "Eliminar"),
     
     #Tabla instrumentos venta 
-    div(style="align:left; position:relative; top:40px;",tableOutput('ventav')),
+    h4('Venta de Instrumentos',style="margin:20px 0 0 0;"),
+    div(style="align:left; position:relative; top:20px;",tableOutput('ventav')),
     #Tabala instrumentos compra
-    div(style="align:left; position:relative; top:40px;",tableOutput('comprac'))),
+    h4('Compra de Instrumentos',style="margin:50px 0 0 0;"),
+    div(style="align:left; position:relative; top:20px;",tableOutput('comprac'))),
   
   mainPanel(
-    DT::dataTableOutput("indv"),
-    DT::dataTableOutput("indc")
+    h2("Indicadores",style = "font-family: 'Roboto Slab', serif;
+                 font-weight: 500; line-height: 1.1; 
+       color: #fefefe;"),
+    DT::dataTableOutput("inda"),
+    DT::dataTableOutput("indd"),
+    verbatimTextOutput("inddx")
   )
 )
 
