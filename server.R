@@ -8,57 +8,129 @@ library(quantmod)
 library(RMySQL)
 library(FundTools)
 
-#Bases de datos
-precios <- read.csv("Precios.csv", header=TRUE)
-precios2 <- read_xlsx("Precios2.xlsx")
-Fecha <- precios2$Fecha
-precios2$Fecha <- NULL
-precios <- cbind(precios,Tipo = sub("-.*","",precios$Instrumento))
+#Instrumentos
+instrumentos <- read.csv("Instrumentos.csv",header=TRUE)
+#Fondos
 fondos <- read.csv("Fondos.csv",header = TRUE)
-#Tener cuidado si existe un tipo de valor z
+fondos <- fondos[-array(which(fondos$Emisora == 'TOTALES')),]
+#Mercados
 mercados <- read.csv("mercados.csv",header=TRUE,stringsAsFactors = FALSE)
 
+#Temporales
+precios <- read.csv("precios.csv")
+precios2 <- read_xlsx("precios2.xlsx")
+Fecha <- precios2$Fecha
+precios2$Fecha <- NULL
+
 #Lista de instrumentos que los fondos pueden vender.
-instrumentoventa <- function(fondos,nombre){
-  valores <- unique(fondos$Emisora[which(fondos$Fondo == nombre)])
-  return(valores)
+tipovalorventa <- function(fondo){
+  indices <- fondos$Fondo %in% fondo
+  tipo <- fondos$TV[indices]
+  return(tipo)
+}
+
+emisoraventa <- function(fondo,tv){
+  fondo <- fondos$Fondo %in% fondo
+  tipo <- fondos$TV %in% tv
+  indices <- ifelse(fondo == TRUE,tipo,fondo)
+  emisora <- fondos$Emisora[indices]
+  return(emisora)
+}
+
+instrumentoventa <- function(fondo,tv,emisora){
+  fondo <- fondos$Fondo %in% fondo
+  tipo <- fondos$TV %in% tv
+  emisora <- fondos$Emisora %in% emisora
+  indices <- ifelse(fondo == TRUE,tipo,fondo)
+  indices <- ifelse(indices == TRUE, emisora,indices)
+  
+  tip <- fondos$TV[indices]
+  emi <- fondos$Emisora[indices]
+  ser <- fondos$Serie[indices]
+  instrumento <- paste0(tip,"-",emi,"-",ser)
+  return(instrumento)
 }
 
 #Lista de instrumentos que los fondos pueden comprar.
-instrumentocompra <- function(precios,nombre, mercados){
-  deudagub <- precios$Tipo %in% mercados$deudagub
-  deudacorp <- precios$Tipo %in% mercados$deudacorp
-  stocksmx <- precios$Tipo %in% mercados$stocksmx
-  stocksint <- precios$Tipo %in% mercados$stocksint
-  fondos <- precios$Tipo %in% mercados$fondos
-  deudausd <- precios$Tipo %in% mercados$deudausd
-  pagares <- precios$Tipo %in% mercados$pagares
-  usd <- precios$Tipo %in% mercados$usd
-  trac <- precios$Tipo %in% mercados$trac
+tipovalorcompra <- function(nombre){
+  
+  deudagub <- instrumentos$TipoValor %in% mercados$deudagub
+  deudacorp <- instrumentos$TipoValor %in% mercados$deudacorp
+  stocksmx <- instrumentos$TipoValor %in% mercados$stocksmx
+  stocksint <- instrumentos$TipoValor %in% mercados$stocksint
+  fondos <- instrumentos$TipoValor %in% mercados$fondos
+  deudausd <- instrumentos$TipoValor %in% mercados$deudausd
+  pagares <- instrumentos$TipoValor %in% mercados$pagares
+  usd <- instrumentos$TipoValor %in% mercados$usd
+  trac <- instrumentos$TipoValor %in% mercados$trac
   
   valores <- switch(nombre,
-                    "+CIGUB"={precios$Instrumento[deudagub]},
-                    "+CIGUMP"={precios$Instrumento[deudagub]},
-                    "+CIGULP"={precios$Instrumento[deudagub]},
-                    "+CIPLUS"={precios$Instrumento[c(deudagub,deudacorp,pagares)]},
-                    #"+CIBOLS"={precios[c(deudagub,stocksmx,stocksint,fondos,trac)]},
+                    "+CIGUB"={instrumentos$TipoValor[deudagub]},
+                    "+CIGUMP"={instrumentos$TipoValor[deudagub]},
+                    "+CIGULP"={instrumentos$TipoValor[deudagub]},
+                    "+CIPLUS"={instrumentos$TipoValor[c(deudagub,deudacorp,pagares)]},
+                    #"+CIBOLS"={instrumentos$TipoValor[c(deudagub,stocksmx,stocksint,fondos,trac)]},
                     "+CIBOLS"={colnames(precios2)},
-                    "+CIUSD"={precios$Instrumento[c(usd,trac)]},
-                    "+CIEQUS"={precios$Instrumento[c(stocksint,trac,usd)]}
+                    "+CIUSD"={instrumentos$TipoValor[c(usd,trac)]},
+                    "+CIEQUS"={instrumentos$TipoValor[c(stocksint,trac,usd)]}
   )
-  valores <- unique(valores)
+  
+  valores <- na.omit(unique(valores))
   return(valores)
+}
+
+emisoracompra <- function(tv){
+  
+  tipo <- instrumentos$TipoValor %in% tv
+  instrumento <- instrumentos$Emision[tipo]
+  return(instrumento)
+}
+
+instrumentocompra <- function(tv, emisora){
+  
+  tipo <- instrumentos$TipoValor %in% tv
+  emisora <- instrumentos$Emision %in% emisora
+  indices <- ifelse(tipo == TRUE,emisora,tipo)
+  instrumento <- instrumentos$id[indices]
+  return(instrumento)
 }
 
 #Función servidor
 function(input, output, session) {
   
+  
+  #Seleccion del Tipo de Valor
   observe({
-    selected_value <- input$fondo
-    #Instrumentos que se pueden vender.
-    updateSelectizeInput(session,inputId='instrumentov',choices=instrumentoventa(fondos,selected_value))
+    selected_fund <- input$fondo
+    #Selección del Tipo Valor para compra
+    updateSelectizeInput(session,inputId='TipoValorc',choices=tipovalorcompra(selected_fund))
+    #Seleccion del Tipo de Valor para venta
+    updateSelectizeInput(session,inputId='TipoValorv',choices=tipovalorventa(selected_fund))
+  })
+  
+  #Seleccion de la Emisora
+  observe({
+    selected_typec <- input$TipoValorc
+    selected_typev <- input$TipoValorv
+    selected_fund <- input$fondo
+    #Selección de la Emisora para compra
+    updateSelectizeInput(session,inputId='Emisorac',choices=emisoracompra(selected_typec))
+    #Selección de la emisora para venta
+    updateSelectizeInput(session,inputId='Emisorav',choices=emisoraventa(selected_fund,selected_typev))
+  })
+  
+  #Instrumentos para comprar y vender
+  observe({
+    selected_fund <- input$fondo
+    selected_typec <- input$TipoValorc
+    selected_valuec <- input$Emisorac
+    selected_typev <- input$TipoValorv
+    selected_valuev <- input$Emisorav
     #Instrumentos que se pueden comprar.
-    updateSelectizeInput(session,inputId='instrumentoc',choices=instrumentocompra(precios,selected_value,mercados))
+    updateSelectizeInput(session,inputId='instrumentoc',choices=instrumentocompra(selected_typec,selected_valuec))
+    #Instrumentos que se pueden vender
+    updateSelectizeInput(session,inputId='instrumentov',choices=instrumentoventa(selected_fund,
+                                                                                 selected_typev,selected_valuev))
   })
   
   #Calculo del monto o titulos venta
