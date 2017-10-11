@@ -33,8 +33,8 @@ fluidPage(
     #actionButton("addv","Agregar",),
 
     #Compra de instrumentos 
-    selectizeInput('TipoValor',label='Elegir Tipo de Valor para la Venta',choices = NULL),
-    selectizeInput('Emisora',label='Elegir Emisora para la Venta',choices = NULL),
+    selectizeInput('TipoValor',label='Tipo de Valor',choices = NULL),
+    selectizeInput('Emisora',label='Emisora',choices = NULL),
     selectizeInput('instrumentoc',label ='Compra de Instrumento',choices = NULL),
     div(style="display:inline-block",numericInput('montog','Monto', value = 0,min = 0)),
     div(style="display:inline-block",numericInput('titulosg','Títulos', value = 0, min = 0)),
