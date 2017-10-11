@@ -20,6 +20,7 @@ mercados <- read.csv("mercados.csv",header=TRUE,stringsAsFactors = FALSE)
 tipovalorventa <- function(fondo){
   indices <- fondos$Fondo %in% fondo
   tipo <- fondos$TV[indices]
+  #Eliminando los tipos CHD (chequeras en dólares) ya que no se pueden vender.
   tipo <- tipo[which(tipo != "CHD")]
   return(tipo)
 }
