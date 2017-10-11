@@ -3,9 +3,6 @@ library(ggplot2)
 
 fondos <- read.csv("Fondos.csv",header = TRUE)
 namesfondos <- as.character(unique(fondos$Fondo))
-precios <- read.csv("Precios.csv",header = TRUE)
-precios <- cbind(precios,Tipo = sub("-.*","",precios$Instrumento))
-
 
 fluidPage(
   
@@ -33,9 +30,11 @@ fluidPage(
       div(style="display:inline-block",numericInput('titulosv','Títulos', value = 0, min = 0)),
     
     #Boton para agregar los valores de venta a la tabla.
-    actionButton("addv","Agregar",),
+    #actionButton("addv","Agregar",),
 
     #Compra de instrumentos 
+    selectizeInput('TipoValor',label='Elegir Tipo de Valor para la Venta',choices = NULL),
+    selectizeInput('Emisora',label='Elegir Emisora para la Venta',choices = NULL),
     selectizeInput('instrumentoc',label ='Compra de Instrumento',choices = NULL),
     div(style="display:inline-block",numericInput('montog','Monto', value = 0,min = 0)),
     div(style="display:inline-block",numericInput('titulosg','Títulos', value = 0, min = 0)),
