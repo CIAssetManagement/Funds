@@ -22,20 +22,25 @@ fluidPage(
     
     id="sidebar",
     
-    selectInput('fondo', 'Fondos', namesfondos),
+    titlePanel("Selección de fondos"),
+    selectInput('fondo','', namesfondos),
     
     #Venta de instrumentos
-      selectizeInput('instrumentov',label ='Venta de Instrumento',choices = NULL),
-      div(style="display:inline-block",numericInput('montov','Monto', value = 0,min = 0)),
-      div(style="display:inline-block",numericInput('titulosv','Títulos', value = 0, min = 0)),
+    titlePanel("Venta de Instrumentos"),
+    selectizeInput('TipoValorv',label='Tipo de Valor',choices = NULL),
+    selectizeInput('Emisorav',label='Emisora',choices = NULL),
+    selectizeInput('instrumentov',label ='Instrumento',choices = NULL),
+    div(style="display:inline-block",numericInput('montov','Monto', value = 0,min = 0)),
+    div(style="display:inline-block",numericInput('titulosv','Títulos', value = 0, min = 0)),
     
     #Boton para agregar los valores de venta a la tabla.
     #actionButton("addv","Agregar",),
 
     #Compra de instrumentos 
-    selectizeInput('TipoValor',label='Tipo de Valor',choices = NULL),
-    selectizeInput('Emisora',label='Emisora',choices = NULL),
-    selectizeInput('instrumentoc',label ='Compra de Instrumento',choices = NULL),
+    titlePanel("Compra de Instrumentos"),
+    selectizeInput('TipoValorc',label='Tipo de Valor',choices = NULL),
+    selectizeInput('Emisorac',label='Emisora',choices = NULL),
+    selectizeInput('instrumentoc',label ='Instrumento',choices = NULL),
     div(style="display:inline-block",numericInput('montog','Monto', value = 0,min = 0)),
     div(style="display:inline-block",numericInput('titulosg','Títulos', value = 0, min = 0)),
 
