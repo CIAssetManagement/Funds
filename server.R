@@ -16,16 +16,11 @@ fondos <- fondos[-array(which(fondos$Emisora == 'TOTALES')),]
 #Mercados
 mercados <- read.csv("mercados.csv",header=TRUE,stringsAsFactors = FALSE)
 
-#Temporales
-precios <- read.csv("precios.csv")
-precios2 <- read_xlsx("precios2.xlsx")
-Fecha <- precios2$Fecha
-precios2$Fecha <- NULL
-
 #Lista de instrumentos que los fondos pueden vender.
 tipovalorventa <- function(fondo){
   indices <- fondos$Fondo %in% fondo
   tipo <- fondos$TV[indices]
+  tipo <- tipo[which(tipo != "CHD")]
   return(tipo)
 }
 
@@ -69,8 +64,7 @@ tipovalorcompra <- function(nombre){
                     "+CIGUMP"={instrumentos$TipoValor[deudagub]},
                     "+CIGULP"={instrumentos$TipoValor[deudagub]},
                     "+CIPLUS"={instrumentos$TipoValor[c(deudagub,deudacorp,pagares)]},
-                    #"+CIBOLS"={instrumentos$TipoValor[c(deudagub,stocksmx,stocksint,fondos,trac)]},
-                    "+CIBOLS"={colnames(precios2)},
+                    "+CIBOLS"={instrumentos$TipoValor[c(deudagub,stocksmx,stocksint,fondos,trac)]},
                     "+CIUSD"={instrumentos$TipoValor[c(usd,trac)]},
                     "+CIEQUS"={instrumentos$TipoValor[c(stocksint,trac,usd)]}
   )
@@ -176,10 +170,10 @@ function(input, output, session) {
   }
   
   ###precio venta por instrumento
-  preciovv <- reactive({preciov <- fondos$Precio[match(input$instrumentov,fondos$Emisora)]
+  preciovv <- reactive({preciov <- get_prices(as.character(Sys.Date()-1),input$instrumentov)[1,2]
   return(preciov)})
   ###precio compra por instrumento
-  preciocc <- reactive({precioc <- precios$Precio[match(input$instrumentoc,precios$Instrumento)]
+  preciocc <- reactive({precioc <- get_prices(as.character(Sys.Date()-1),input$instrumentoc)[1,2]
   return(precioc)})
   
   rowdatac<- c()
@@ -199,22 +193,22 @@ function(input, output, session) {
   
   ####################################### Indicadores ##############################################
   
-  portafolio <- fondos %>% filter(Fondo == "+CIBOLS" & I == "D")
-  indices <- array(match(portafolio$Emisora, colnames(precios2)))
-  titulos <- portafolio$Títulos / sum(portafolio$Títulos)
+  #portafolio <- fondos %>% filter(Fondo == "+CIBOLS" & I == "D")
+  #indices <- array(match(portafolio$Emisora, colnames(precios2)))
+  #titulos <- portafolio$Títulos / sum(portafolio$Títulos)
   
   
-  portafolioa <- t(titulos * t(precios2[indices]))
-  prices <- xts(portafolioa,as.Date(Fecha))
-  rend <- rowSums(ROC(prices, type = "discrete"),na.rm = TRUE)
+  #portafolioa <- t(titulos * t(precios2[indices]))
+  #prices <- xts(portafolioa,as.Date(Fecha))
+  #rend <- rowSums(ROC(prices, type = "discrete"),na.rm = TRUE)
   
   ###Calculo del var###
 
-  varant <- quantile(rend,0.05)
-  vardes <- 0.05   
+  #varant <- quantile(rend,0.05)
+  #vardes <- 0.05   
   
   ###Calculo del rendimineto###
-  rendacu1 <- (prod(1 + rend/100) - 1)
+  #rendacu1 <- (prod(1 + rend/100) - 1)
   
   #Mensaje de error para la venta
   # if(varant<vardes){
@@ -245,20 +239,20 @@ function(input, output, session) {
   })
   
   #Data frame foto actual Fondos
-  dfinda <-data.frame( Fondo= "CIBOLS",VaR=varant,Rendimiento=rendacu1)
+  #dfinda <-data.frame( Fondo= "CIBOLS",VaR=varant,Rendimiento=rendacu1)
   
   #Data frame simulador
-  rowdata <- c()
-  dfindd <- eventReactive(input$addv | input$addc,{
-    fond <- input$fondo
-    VaR <- varant
-    rendd <- rendacu1
+  #rowdata <- c()
+  #dfindd <- eventReactive(input$addv | input$addc,{
+  #  fond <- input$fondo
+  #  VaR <- varant
+  #  rendd <- rendacu1
 
-    newrow <- data.frame(Fondo=fond,VaR=varant,Rendimiento=rendd)
-    rowdata <<- rbind(rowdata,newrow)
-    return(rowdata)
+  #  newrow <- data.frame(Fondo=fond,VaR=varant,Rendimiento=rendd)
+  #  rowdata <<- rbind(rowdata,newrow)
+  #  return(rowdata)
   
-  })
+  #})
   
   
   #Bonton delete row

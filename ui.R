@@ -34,7 +34,7 @@ fluidPage(
     div(style="display:inline-block",numericInput('titulosv','Títulos', value = 0, min = 0)),
     
     #Boton para agregar los valores de venta a la tabla.
-    actionButton("addv","Agregar",),
+    actionButton("addv","Agregar"),
 
     #Compra de instrumentos 
     titlePanel("Compra de Instrumentos"),
