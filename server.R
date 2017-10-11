@@ -5,6 +5,8 @@ library(dplyr)
 library(readxl)
 library(xts)
 library(quantmod)
+library(RMySQL)
+library(FundTools)
 
 #Bases de datos
 precios <- read.csv("Precios.csv", header=TRUE)
@@ -143,12 +145,12 @@ function(input, output, session) {
   rendacu1 <- (prod(1 + rend/100) - 1)
   
   #Mensaje de error para la venta
-  if(varant<vardes){
-  observeEvent(input$addv, {
-    showModal(modalDialog(title = "ERROR",paste0("No se puede vender ",
-    titulosvv(input$titulosv,preciovv())," titulos de ",input$instrumentov," sobrepsa el VaR permitido")))
-  })}
-  
+  # if(varant<vardes){
+  # observeEvent(input$addv, {
+  #   showModal(modalDialog(title = "ERROR",paste0("No se puede vender ",
+  #   titulosvv(input$titulosv,preciovv())," titulos de ",input$instrumentov," sobrepsa el VaR permitido")))
+  # })}
+  # 
   #Mensaje de error para la compra
   # if(varant<vardes){
   # observeEvent(input$addc, {
@@ -156,18 +158,19 @@ function(input, output, session) {
   #   tituloscc(input$titulosg,preciocc())," titulos de ",input$instrumentoc," sobrepsa el VaR permitido")))
   # })}
   # 
-  # #Data frame para alimentar la tabla con los instrumentos compra
-  # dfc <- eventReactive(input$addc,{
-  #   fondc <- input$fondo
-  #   validate(need(input$instrumentoc != "", "Favor de seleccionar un instrumento"))
-  #   instrumentocc <- input$instrumentoc
-  #   montoc <- montocc(input$montog,preciocc())
-  #   titulosc <- tituloscc(input$titulosg,preciocc())
-  #   
-  #   new_rowc <- data.frame(Fondo=fondc,Instrumento=instrumentocc,Monto=montoc,Titulos= titulosc)
-  #   rowdatac <<- rbind(rowdatac,new_rowc)
-  #   return(rowdatac)
-  # })
+  
+  #Data frame para alimentar la tabla con los instrumentos compra
+  dfc <- eventReactive(input$addc,{
+    fondc <- input$fondo
+    validate(need(input$instrumentoc != "", "Favor de seleccionar un instrumento"))
+    instrumentocc <- input$instrumentoc
+    montoc <- montocc(input$montog,preciocc())
+    titulosc <- tituloscc(input$titulosg,preciocc())
+
+    new_rowc <- data.frame(Fondo=fondc,Instrumento=instrumentocc,Monto=montoc,Titulos= titulosc)
+    rowdatac <<- rbind(rowdatac,new_rowc)
+    return(rowdatac)
+  })
   
   #Data frame foto actual Fondos
   dfinda <-data.frame( Fondo= "CIBOLS",VaR=varant,Rendimiento=rendacu1)
@@ -182,6 +185,7 @@ function(input, output, session) {
     newrow <- data.frame(Fondo=fond,VaR=varant,Rendimiento=rendd)
     rowdata <<- rbind(rowdata,newrow)
     return(rowdata)
+  
   })
   
   
@@ -191,6 +195,7 @@ function(input, output, session) {
   #     rowdata <- rowdata[-as.numeric(input$indd_rows_selected),]
   #   }
   #   return(rowdata)
+  #   reactive(input$deleteSelected <- 0)
   # })
   
   output$ventav <- renderTable({dfv()})

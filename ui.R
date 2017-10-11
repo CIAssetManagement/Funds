@@ -56,6 +56,9 @@ fluidPage(
                  font-weight: 500; line-height: 1.1; 
        color: #fefefe;"),
     DT::dataTableOutput("inda"),
+    h2("Simulador",style = "font-family: 'Roboto Slab', serif;
+                 font-weight: 500; line-height: 1.1; 
+       color: #fefefe;"),
     DT::dataTableOutput("indd"),
     verbatimTextOutput("inddx")
   )
