@@ -191,7 +191,18 @@ function(input, output, session) {
     rowdatav <<- rbind(rowdatav,new_rowv)
     return(rowdatav)
   })
-  
+    #Data frame para alimentar la tabla con los instrumentos compra
+  dfc <- eventReactive(input$addc,{
+    fondc <- input$fondo
+    validate(need(input$instrumentoc != "", "Favor de seleccionar un instrumento"))
+    instrumentocc <- input$instrumentoc
+    montoc <- montocc(input$montog,preciocc())
+    titulosc <- tituloscc(input$titulosg,preciocc())
+
+    new_rowc <- data.frame(Fondo=fondc,Instrumento=instrumentocc,Monto=montoc,Titulos= titulosc)
+    rowdatac <<- rbind(rowdatac,new_rowc)
+    return(rowdatac)
+  })
   ####################################### Indicadores ##############################################
   
   #portafolio <- fondos %>% filter(Fondo == "+CIBOLS" & I == "D")
@@ -226,51 +237,37 @@ function(input, output, session) {
   # })}
   # 
   
-  #Data frame para alimentar la tabla con los instrumentos compra
-  dfc <- eventReactive(input$addc,{
-    fondc <- input$fondo
-    validate(need(input$instrumentoc != "", "Favor de seleccionar un instrumento"))
-    instrumentocc <- input$instrumentoc
-    montoc <- montocc(input$montog,preciocc())
-    titulosc <- tituloscc(input$titulosg,preciocc())
-
-    new_rowc <- data.frame(Fondo=fondc,Instrumento=instrumentocc,Monto=montoc,Titulos= titulosc)
-    rowdatac <<- rbind(rowdatac,new_rowc)
-    return(rowdatac)
+  #Data frame foto actual Fondos
+  instrumento <- paste0(fondos$TV,"-",fondos$Emisora,"-",fondos$Serie)
+  dfunda <- data.frame(
+    Fondo=fondos$Fondo,Instrumento=instrumento,Titulos=fondos$Títulos, Monto=fondos$Costo.Total)
+  
+  #Data frame nueva foto Fondos
+  dffund <- eventReactive(input$summit,{
+    fundv <- data.frame(Fondo=rowdatav$Fondo,Instrumento=rowdatav$Instrumento,Monto=rowdatav$Monto*-1,Titulos=rowdatav$Titulos*-1)
+    fundd <- rowdatac
+    fundn <- rbind.data.frame(fundv,fundd)
+    
+    funds <- merge(dfunda,fundn,by=c("Fondo","Instrumento"), all=TRUE)
+    MontoA=ifelse(is.na(funds$Monto.x)==TRUE,0,funds$Monto.x)
+    TitulosA=ifelse(is.na(funds$Titulos.x)==TRUE,0,funds$Titulos.x)
+    MontoN=ifelse(is.na(funds$Monto.y)==TRUE,0,funds$Monto.y)
+    TitulosN=ifelse(is.na(funds$Titulos.y)==TRUE,0,funds$Titulos.y)
+    funds <- data.frame(cbind(funds[,1:2],TitulosA,MontoA,TitulosN,MontoN))
+    colnames(funds) <- c("Fondo", "Instrumento","TitulosA","MontoA","TitulosN","MontoN")
+    Titulos <- funds$TitulosA+funds$TitulosN
+    Monto <- funds$MontoA+funds$MontoN
+    fundb <- data.frame(cbind(funds[,1:2],Titulos,Monto))
+    return(fundb)
   })
   
-  #Data frame foto actual Fondos
-  #dfinda <-data.frame( Fondo= "CIBOLS",VaR=varant,Rendimiento=rendacu1)
+ output$ventav <- renderTable({dfv()})
+ output$comprac <- renderTable({dfc()})
   
-  #Data frame simulador
-  #rowdata <- c()
-  #dfindd <- eventReactive(input$addv | input$addc,{
-  #  fond <- input$fondo
-  #  VaR <- varant
-  #  rendd <- rendacu1
-
-  #  newrow <- data.frame(Fondo=fond,VaR=varant,Rendimiento=rendd)
-  #  rowdata <<- rbind(rowdata,newrow)
-  #  return(rowdata)
-  
-  #})
-  
-  
-  #Bonton delete row
-  # del <- eventReactive(input$deleteSelected,{
-  #   if(!is.null(input$indd_rows_selected)){
-  #     rowdata <- rowdata[-as.numeric(input$indd_rows_selected),]
-  #   }
-  #   return(rowdata)
-  #   reactive(input$deleteSelected <- 0)
-  # })
-  
-  output$ventav <- renderTable({dfv()})
-  output$comprac <- renderTable({dfc()})
-  
-  options(DT.options = list(pageLength = 5))
-  output$inda = DT::renderDataTable({dfinda})
-  output$indax=renderPrint(input$inda_rows_selected)
-  output$indd = DT::renderDataTable({dfindd()})
-  output$inddx=renderPrint(input$indd_rows_selected)
+ options(DT.options = list(pageLength = 10))
+ output$funda = DT::renderDataTable({subset(dfunda,Fondo %in% input$show_vars)})
+ output$fundd = DT::renderDataTable({subset(dffund(),Fondo %in% input$show_vars)})
+ #output$inda = DT::renderDataTable({})
+ #output$indd = DT::renderDataTable({})
+ output$inddx=renderPrint(input$indd_rows_selected)
 }
