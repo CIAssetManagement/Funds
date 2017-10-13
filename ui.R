@@ -53,7 +53,7 @@ fluidPage(
     #Tabala instrumentos compra
     h4('Compra de Instrumentos',style="margin:50px 0 0 0;"),
     div(style="align:left; position:relative; top:20px;",tableOutput('comprac')),
-    actionButton("summit","Cargar"),
+    actionButton("summit","Cargar")),
     #actionButton("limpiar", "Limpiar")),
     
   
@@ -72,5 +72,6 @@ fluidPage(
                  font-weight: 500; line-height: 1.1; color: #fefefe;"),hr()),
     DT::dataTableOutput("indd"))
   )
+  
 )
 
