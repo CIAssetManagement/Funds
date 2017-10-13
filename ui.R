@@ -46,25 +46,31 @@ fluidPage(
 
     #Boton para agregar los valores de compra a la tabla.
     actionButton("addc","Agregar"),
-    actionButton("deleteSelected", "Eliminar"),
     
     #Tabla instrumentos venta 
     h4('Venta de Instrumentos',style="margin:20px 0 0 0;"),
     div(style="align:left; position:relative; top:20px;",tableOutput('ventav')),
     #Tabala instrumentos compra
     h4('Compra de Instrumentos',style="margin:50px 0 0 0;"),
-    div(style="align:left; position:relative; top:20px;",tableOutput('comprac'))),
+    div(style="align:left; position:relative; top:20px;",tableOutput('comprac')),
+    actionButton("summit","Cargar"),
+    actionButton("limpiar", "Limpiar")),
+    
   
-  mainPanel(
-    h2("Indicadores",style = "font-family: 'Roboto Slab', serif;
-                 font-weight: 500; line-height: 1.1; 
-       color: #fefefe;"),
-    DT::dataTableOutput("inda"),
-    h2("Simulador",style = "font-family: 'Roboto Slab', serif;
-                 font-weight: 500; line-height: 1.1; 
-       color: #fefefe;"),
-    DT::dataTableOutput("indd"),
-    verbatimTextOutput("inddx")
+  fluidRow(
+    checkboxGroupInput("show_vars","Selecciona el Fondo:",namesfondos,namesfondos,inline=TRUE),
+    column(4,h2("Fondos",style = "font-family: 'Roboto Slab', serif;
+                 font-weight: 500; line-height: 1.1; color: #fefefe;"),hr(),
+    DT::dataTableOutput("funda"),
+    h2("Medidas de Riesgo",style = "font-family: 'Roboto Slab', serif;
+                 font-weight: 500; line-height: 1.1;color: #fefefe;"),hr(),
+    DT::dataTableOutput("inda")),
+  fluidRow(column(4,h2("Fondos Operaciones",style = "font-family: 'Roboto Slab', serif;
+                 font-weight: 500; line-height: 1.1; color: #fefefe;"),hr(),
+    DT::dataTableOutput("fundd"),
+    h2("Medidas de Riesgo Simulación",style = "font-family: 'Roboto Slab', serif;
+                 font-weight: 500; line-height: 1.1; color: #fefefe;"),hr()),
+    DT::dataTableOutput("indd"))
   )
 )
 
