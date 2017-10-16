@@ -217,18 +217,17 @@ function(input, output, session) {
   ###Calculo del var###
 
   #varant <- quantile(rend,0.05)
-  varant <- 0.0005
-  vardes <- 0.05   
+  #vardes <- 0.05   
   
   ###Calculo del rendimineto###
   #rendacu1 <- (prod(1 + rend/100) - 1)
   
   #Mensaje de error para la venta
-  if(varant<vardes){
-  observeEvent(input$addv, {
-    showModal(modalDialog(title = "ERROR",paste0("No se puede vender ",
-    titulosvv(input$titulosv,preciovv())," titulos de ",input$instrumentov," sobrepsa el VaR permitido")))
-  })}
+ # if(varant<vardes){
+ #observeEvent(input$addv, {
+ #   showModal(modalDialog(title = "ERROR",paste0("No se puede vender ",
+ #   titulosvv(input$titulosv,preciovv())," titulos de ",input$instrumentov," sobrepsa el VaR permitido")))
+ #})}
 
   #Mensaje de error para la compra
   # if(varant<vardes){
