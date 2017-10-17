@@ -50,24 +50,22 @@ instrumentoventa <- function(fondo,tv,emisora){
 #Lista de instrumentos que los fondos pueden comprar.
 tipovalorcompra <- function(nombre){
   
-  deudagub <- instrumentos$TipoValor %in% mercados$deudagub
-  deudacorp <- instrumentos$TipoValor %in% mercados$deudacorp
-  stocksmx <- instrumentos$TipoValor %in% mercados$stocksmx
-  stocksint <- instrumentos$TipoValor %in% mercados$stocksint
-  fondos <- instrumentos$TipoValor %in% mercados$fondos
-  deudausd <- instrumentos$TipoValor %in% mercados$deudausd
-  pagares <- instrumentos$TipoValor %in% mercados$pagares
-  usd <- instrumentos$TipoValor %in% mercados$usd
-  trac <- instrumentos$TipoValor %in% mercados$trac
+  cigub <- instrumentos$TipoValor %in% mercados$cigub
+  cigump <- instrumentos$TipoValor %in% mercados$cigump
+  cigulp <- instrumentos$TipoValor %in% mercados$cigulp
+  ciplus <- instrumentos$TipoValor %in% mercados$ciplus
+  cibols <- instrumentos$TipoValor %in% mercados$cibols
+  ciequs <- instrumentos$TipoValor %in% mercados$ciequs
+  ciusd <- instrumentos$TipoValor %in% mercados$ciusd
   
   valores <- switch(nombre,
-                    "+CIGUB"={instrumentos$TipoValor[deudagub]},
-                    "+CIGUMP"={instrumentos$TipoValor[deudagub]},
-                    "+CIGULP"={instrumentos$TipoValor[deudagub]},
-                    "+CIPLUS"={instrumentos$TipoValor[c(deudagub,deudacorp,pagares)]},
-                    "+CIBOLS"={instrumentos$TipoValor[c(deudagub,stocksmx,stocksint,fondos,trac)]},
-                    "+CIUSD"={instrumentos$TipoValor[c(usd,trac)]},
-                    "+CIEQUS"={instrumentos$TipoValor[c(stocksint,trac,usd)]}
+                    "+CIGUB"={instrumentos$TipoValor[cigub]},
+                    "+CIGUMP"={instrumentos$TipoValor[cigump]},
+                    "+CIGULP"={instrumentos$TipoValor[cigulp]},
+                    "+CIPLUS"={instrumentos$TipoValor[ciplus]},
+                    "+CIBOLS"={instrumentos$TipoValor[cibols]},
+                    "+CIUSD"={instrumentos$TipoValor[ciusd]},
+                    "+CIEQUS"={instrumentos$TipoValor[ciequs]}
   )
   
   valores <- na.omit(unique(valores))
