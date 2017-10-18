@@ -231,6 +231,16 @@ function(input, output, session) {
     rowdatac <<- rbind(rowdatac,new_rowc)
     return(rowdatac)
   })
+  dftotal <- eventReactive(input$summit,{
+    Total <- rowdatac %>% group_by(Fondo) %>% summarise(sum(Titulos),sum(Monto))
+    Total <- data.frame(Total$Fondo,Instrumento="TOTAL",Total$`sum(Titulos)`,Total$`sum(Monto)`) 
+    colnames(Total) <- c("Fondo","Instrumento","Titulos","Monto")
+    Total2 <- merge(Total,e,by = c("Fondo"),all=TRUE)
+    EfectivoFinal <- Total2$Monto.y - Total2$Monto.x
+    Total2 <- data.frame(Total2$Fondo,Total2$Monto.x,Total2$Monto.y,EfectivoFinal)
+    colnames(Total2) <- c("Fondo","Monto Total","Efectivo","EfectivoFinal")
+    return(Total2)
+  })
   ####################################### Indicadores ##############################################
   
   #portafolio <- fondos %>% filter(Fondo == "+CIBOLS" & I == "D")
@@ -279,8 +289,14 @@ function(input, output, session) {
 
   #Data frame foto actual Fondos
   instrumento <- paste0(fondos$TV,"-",fondos$Emisora,"-",fondos$Serie)
-  dfunda <- data.frame(
-    Fondo=fondos$Fondo,Instrumento=instrumento,Titulos=fondos$Títulos, Monto=fondos$Costo.Total)
+  dfunda <- data.frame(I=fondos$I,Fondo=fondos$Fondo,Instrumento=instrumento,Titulos=fondos$Títulos,Monto=fondos$Costo.Total)
+  dfunda$Instrumento <- ifelse(dfunda$I!="R",as.character(dfunda$Instrumento),dfunda$Instrumento <- "EFECTIVO")
+  efec <- dfunda %>% group_by(Fondo, Instrumento) %>% summarise(sum(Titulos), sum(Monto))
+  colnames(efec) <- c("Fondo","Instrumento","Titulos","Monto")
+  ind <- ifelse(efec$Instrumento=="EFECTIVO",efec$Titulos== 0,efec$Titulos==efec$Titulos)
+  Tit <- data.frame(Titulos=ifelse(ind=="TRUE",efec$Titulos,0))
+  dfunda <- data.frame(cbind(efec[,1:2]),Tit,Monto=efec$Monto)
+  e <- filter(efec,Instrumento=="EFECTIVO")
   
   #Data frame nueva foto Fondos
   dffund <- eventReactive(input$summit,{
@@ -303,6 +319,7 @@ function(input, output, session) {
   
  output$ventav <- renderTable({dfv()})
  output$comprac <- renderTable({dfc()})
+  output$prueba <- renderTable({dftotal()})
   
  options(DT.options = list(pageLength = 10))
  output$funda = DT::renderDataTable({subset(dfunda,Fondo %in% input$show_vars)})
