@@ -231,16 +231,7 @@ function(input, output, session) {
     rowdatac <<- rbind(rowdatac,new_rowc)
     return(rowdatac)
   })
-  dftotal <- eventReactive(input$summit,{
-    Total <- rowdatac %>% group_by(Fondo) %>% summarise(sum(Titulos),sum(Monto))
-    Total <- data.frame(Total$Fondo,Instrumento="TOTAL",Total$`sum(Titulos)`,Total$`sum(Monto)`) 
-    colnames(Total) <- c("Fondo","Instrumento","Titulos","Monto")
-    Total2 <- merge(Total,e,by = c("Fondo"),all=TRUE)
-    EfectivoFinal <- Total2$Monto.y - Total2$Monto.x
-    Total2 <- data.frame(Total2$Fondo,Total2$Monto.x,Total2$Monto.y,EfectivoFinal)
-    colnames(Total2) <- c("Fondo","Monto Total","Efectivo","EfectivoFinal")
-    return(Total2)
-  })
+
   ####################################### Indicadores ##############################################
   
   #portafolio <- fondos %>% filter(Fondo == "+CIBOLS" & I == "D")
@@ -300,6 +291,15 @@ function(input, output, session) {
   
   #Data frame nueva foto Fondos
   dffund <- eventReactive(input$summit,{
+    
+    Total <- rowdatac %>% group_by(Fondo) %>% summarise(sum(Titulos),sum(Monto))
+    Total <- data.frame(Total$Fondo,Instrumento="TOTAL",Total$`sum(Titulos)`,Total$`sum(Monto)`) 
+    colnames(Total) <- c("Fondo","Instrumento","Titulos","Monto")
+    Total2 <- merge(Total,e,by = c("Fondo"),all=TRUE)
+    EfectivoFinal <- Total2$Monto.y - Total2$Monto.x
+    Total2 <- data.frame(Total2$Fondo,Total2$Monto.x,Total2$Monto.y,EfectivoFinal)
+    colnames(Total2) <- c("Fondo","Monto Total","Efectivo","EfectivoFinal")
+    
     fundv <- data.frame(Fondo=rowdatav$Fondo,Instrumento=rowdatav$Instrumento,Monto=rowdatav$Monto*-1,Titulos=rowdatav$Titulos*-1)
     fundd <- rowdatac
     fundn <- rbind.data.frame(fundv,fundd)
@@ -314,6 +314,15 @@ function(input, output, session) {
     Titulos <- funds$TitulosA+funds$TitulosN
     Monto <- funds$MontoA+funds$MontoN
     fundb <- data.frame(cbind(funds[,1:2],Titulos,Monto))
+    efectivo <- c()
+    for (x in unique(fundb$Fondo)){
+      indicesf <- fundb$Fondo %in% x
+      indicese <- fundb$Instrumento %in% "EFECTIVO"
+      indices <- ifelse(indicesf == TRUE, indicese,indicesf)
+      nuevoindice <- Total2$Fondo %in% x
+      fundb$Monto[indices] <- Total2$EfectivoFinal[nuevoindice]
+    }
+    
     return(fundb)
   })
   
