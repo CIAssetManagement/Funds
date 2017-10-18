@@ -34,6 +34,10 @@ calificaciones <- function(fondo,tv){
   }
   return(calificacion)
 }
+<<<<<<< HEAD
+=======
+
+>>>>>>> 38f2b9799273376fcce4928cd669c7aef38ed757
 #Lista de instrumentos que los fondos pueden vender.
 tipovalorventa <- function(fondo){
   indices <- fondos$Fondo %in% fondo
@@ -266,6 +270,7 @@ function(input, output, session) {
   # 
   
   #Warning para compra de ETFs
+<<<<<<< HEAD
    observeEvent(input$addc, {
      selected_fund <- input$fondo
      selected_type <- input$TipoValorc
@@ -275,6 +280,15 @@ function(input, output, session) {
    })
    
   
+=======
+  observeEvent(input$addc, {
+    selected_fund <- input$fondo
+    selected_type <- input$TipoValorc
+    if(selected_fund == "+CIUSD" & selected_type == "1ISP"){
+      showModal(modalDialog(title = "Warning",paste0("Asegurar que el ETF seleccionado es de renta fija. ")))
+    }
+  }) 
+>>>>>>> 38f2b9799273376fcce4928cd669c7aef38ed757
   #Data frame foto actual Fondos
   instrumento <- paste0(fondos$TV,"-",fondos$Emisora,"-",fondos$Serie)
   dfunda <- data.frame(
