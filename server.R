@@ -18,7 +18,8 @@ mercados <- read.csv("mercados.csv",header=TRUE,stringsAsFactors = FALSE)
 
 #Funcion que da las calificaciones de los instrumentos en los que puede invertir cada fondo
 calificaciones <- function(fondo,tv){
-  valores <- c(mercados$cigump,"71","72","73","74","75","90","91","92","93","94","95","96","97")
+  valores <- unique(c(mercados$revision))
+  valores <- valores[ifelse(valores == "",FALSE,TRUE)]
   if(tv %in% valores){
     calificacion <- switch(fondo,
                            "+CIGUB"=c("AAA"),
@@ -98,7 +99,7 @@ emisoracompra <- function(nombre,tv){
   indicec <- instrumentos$Calificacion %in% calificacion
   indices <- ifelse(indicei==TRUE,indicec,indicei)
   #Instrumentos
-  instrumento <- instrumentos$Emision[indices]
+  instrumento <- instrumentos$Emisora[indices]
   
   return(instrumento)
 }
@@ -108,7 +109,7 @@ instrumentocompra <- function(nombre,tv,emisora){
   calificacion <- calificaciones(nombre,tv)
   #Triple match
   indicet <- instrumentos$TipoValor %in% tv
-  indicee <- instrumentos$Emision %in% emisora
+  indicee <- instrumentos$Emisora %in% emisora
   indicec <- instrumentos$Calificacion %in% calificacion
   indicete <- ifelse(indicet == TRUE,indicee,indicet)
   indices <- ifelse(indicete == TRUE,indicec,indicete)
@@ -265,6 +266,14 @@ function(input, output, session) {
   # })}
   # 
   
+  #Warning para compra de ETFs
+  observeEvent(input$addc, {
+    selected_fund <- input$fondo
+    selected_type <- input$TipoValorc
+    if(selected_fund == "+CIUSD" & selected_type == "1ISP"){
+      showModal(modalDialog(title = "Warning",paste0("Asegurar que el ETF seleccionado es de renta fija. ")))
+    }
+  }) 
   #Data frame foto actual Fondos
   instrumento <- paste0(fondos$TV,"-",fondos$Emisora,"-",fondos$Serie)
   dfunda <- data.frame(
