@@ -16,6 +16,23 @@ fondos <- fondos[-array(which(fondos$Emisora == 'TOTALES')),]
 #Mercados
 mercados <- read.csv("mercados.csv",header=TRUE,stringsAsFactors = FALSE)
 
+#Funcion que da las calificaciones de los instrumentos en los que puede invertir cada fondo
+calificaciones <- function(fondo,tv){
+  valores <- c(mercados$cigump,"71","72","73","74","75","90","91","92","93","94","95","96","97")
+  if(tv %in% valores){
+    calificacion <- switch(fondo,
+                           "+CIGUB"=c("AAA"),
+                           "+CIGUMP"=c("AAA"),
+                           "+CIGULP"=c("AAA"),
+                           "+CIEQUS"=c("AAA","AA+","AA","AA-","A+","A"),
+                           "+CIBOLS"=c("AAA","AA+","AA","AA-","A+","A"),
+                           "+CIPLUS"=c("AAA","AA+","AA","AA-","A+","A"),
+                           "+CIUSD"=c("AAA","AA+","AA","AA-","A+","A"))
+  } else {
+    calificacion <- c("-")
+  }
+  return(calificacion)
+}
 #Lista de instrumentos que los fondos pueden vender.
 tipovalorventa <- function(fondo){
   indices <- fondos$Fondo %in% fondo
@@ -72,18 +89,29 @@ tipovalorcompra <- function(nombre){
   return(valores)
 }
 
-emisoracompra <- function(tv){
+emisoracompra <- function(nombre,tv){
+  #Posibles instrumentos
+  calificacion <- calificaciones(nombre,tv)
+  #Double match
+  indicei <- instrumentos$TipoValor %in% tv
+  indicec <- instrumentos$Calificacion %in% calificacion
+  indices <- ifelse(indicei==TRUE,indicec,indicei)
+  #Instrumentos
+  instrumento <- instrumentos$Emision[indices]
   
-  tipo <- instrumentos$TipoValor %in% tv
-  instrumento <- instrumentos$Emision[tipo]
   return(instrumento)
 }
 
-instrumentocompra <- function(tv, emisora){
-  
-  tipo <- instrumentos$TipoValor %in% tv
-  emisora <- instrumentos$Emision %in% emisora
-  indices <- ifelse(tipo == TRUE,emisora,tipo)
+instrumentocompra <- function(nombre,tv,emisora){
+  #Posibles instrumentos
+  calificacion <- calificaciones(nombre,tv)
+  #Triple match
+  indicet <- instrumentos$TipoValor %in% tv
+  indicee <- instrumentos$Emision %in% emisora
+  indicec <- instrumentos$Calificacion %in% calificacion
+  indicete <- ifelse(indicet == TRUE,indicee,indicet)
+  indices <- ifelse(indicete == TRUE,indicec,indicete)
+  #Instrumentos
   instrumento <- instrumentos$id[indices]
   return(instrumento)
 }
@@ -107,7 +135,7 @@ function(input, output, session) {
     selected_typev <- input$TipoValorv
     selected_fund <- input$fondo
     #Selección de la Emisora para compra
-    updateSelectizeInput(session,inputId='Emisorac',choices=emisoracompra(selected_typec))
+    updateSelectizeInput(session,inputId='Emisorac',choices=emisoracompra(selected_fund,selected_typec))
     #Selección de la emisora para venta
     updateSelectizeInput(session,inputId='Emisorav',choices=emisoraventa(selected_fund,selected_typev))
   })
@@ -120,10 +148,11 @@ function(input, output, session) {
     selected_typev <- input$TipoValorv
     selected_valuev <- input$Emisorav
     #Instrumentos que se pueden comprar.
-    updateSelectizeInput(session,inputId='instrumentoc',choices=instrumentocompra(selected_typec,selected_valuec))
+    updateSelectizeInput(session,inputId='instrumentoc',choices=instrumentocompra(selected_fund,selected_typec,
+                                                                                  selected_valuec))
     #Instrumentos que se pueden vender
-    updateSelectizeInput(session,inputId='instrumentov',choices=instrumentoventa(selected_fund,
-                                                                                 selected_typev,selected_valuev))
+    updateSelectizeInput(session,inputId='instrumentov',choices=instrumentoventa(selected_fund,selected_typev,
+                                                                                 selected_valuev))
   })
   
   #Calculo del monto o titulos venta
