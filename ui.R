@@ -53,9 +53,10 @@ fluidPage(
     #Tabala instrumentos compra
     h4('Compra de Instrumentos',style="margin:50px 0 0 0;"),
     div(style="align:left; position:relative; top:20px;",tableOutput('comprac')),
-    actionButton("summit","Cargar")),
-    #actionButton("limpiar", "Limpiar")),
-    
+    actionButton("summit","Cargar"),
+    #actionButton("limpiar", "Limpiar"),
+    h4('PRUEBA TOTAL',style="margin:80px 0 0 0;"),
+    div(style="align:left; position:relative; top:20px;",tableOutput('prueba'))),
   
   fluidRow(
     checkboxGroupInput("show_vars","Selecciona el Fondo:",namesfondos,namesfondos,inline=TRUE),
