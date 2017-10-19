@@ -291,13 +291,37 @@ function(input, output, session) {
   
   #Data frame nueva foto Fondos
   dffund <- eventReactive(input$summit,{
-    
-    Total <- rowdatac %>% group_by(Fondo) %>% summarise(sum(Titulos),sum(Monto))
-    Total <- data.frame(Total$Fondo,Instrumento="TOTAL",Total$`sum(Titulos)`,Total$`sum(Monto)`) 
-    colnames(Total) <- c("Fondo","Instrumento","Titulos","Monto")
+    if(is.null(rowdatav) | is.null(rowdatac)) {
+      if(is.null(rowdatav)){
+        Totalc <- rowdatac %>% group_by(Fondo) %>% summarise(sum(Monto))
+        colnames(Totalc) <- c("Fondo", "MontoC")
+        Totalv <- data.frame(Fondo=Totalc$Fondo,MontoV=rep(0,length(Totalc$Fondo)))
+        Total <- merge(Totalc,Totalv,by=c("Fondo"), all=TRUE)
+        colnames(Total) <- c("Fondo", "MontoC","MontoV")
+      }
+      else{
+        Totalv <- rowdatav %>% group_by(Fondo) %>% summarise(sum(Monto))
+        colnames(Totalv) <- c("Fondo", "MontoV")
+        Totalc <- data.frame(Fondo=Totalv$Fondo,MontoC=rep(0,length(Totalv$Fondo)))
+        Total <- merge(Totalc,Totalv,by=c("Fondo"), all=TRUE)
+        colnames(Total) <- c("Fondo", "MontoC","MontoV")
+      }
+    }
+    else{
+      Totalc <- rowdatac %>% group_by(Fondo) %>% summarise(sum(Monto))
+      Totalv <- rowdatav %>% group_by(Fondo) %>% summarise(sum(Monto))
+      colnames(Totalc) <- c("Fondo", "MontoC")
+      colnames(Totalv) <- c("Fondo", "MontoV")
+      Total <- merge(Totalc,Totalv,by=c("Fondo"), all=TRUE)
+      colnames(Total) <- c("Fondo", "MontoC","MontoV")
+    }
+
+    Total2 <- data.frame(Total$Fondo,Instrumento="TOTAL",Total$MontoC,Total$MontoV) 
+    colnames(Total2) <- c("Fondo","Instrumento","MontoC","MontoV")
     Total2 <- merge(Total,e,by = c("Fondo"),all=TRUE)
-    EfectivoFinal <- Total2$Monto.y - Total2$Monto.x
-    Total2 <- data.frame(Total2$Fondo,Total2$Monto.x,Total2$Monto.y,EfectivoFinal)
+    MontoTotal <- Total2$MontoC - Total2$MontoV
+    EfectivoFinal <- Total2$Monto - Total2$MontoC + Total2$MontoV
+    Total2 <- data.frame(Total2$Fondo,MontoTotal,Total2$Monto,EfectivoFinal)
     colnames(Total2) <- c("Fondo","MontoTotal","Efectivo","EfectivoFinal")
     
     fundv <- data.frame(Fondo=rowdatav$Fondo,Instrumento=rowdatav$Instrumento,Monto=rowdatav$Monto*-1,Titulos=rowdatav$Titulos*-1)
