@@ -271,10 +271,10 @@ function(input, output, session) {
      selected_fund <- input$fondo
      selected_type <- input$TipoValorc
      if(selected_fund == "+CIUSD" & selected_type == "1ISP"){
-       showModal(modalDialog(title = "Warning",paste0("Asegurar que el ETF seleccionado es de renta fija. ")))
+       showModal(modalDialog(title = "WARNING",paste0("Asegurar que el ETF seleccionado es de renta fija. ")))
      }
      if(selected_fund == "+CIPLUS" & selected_type == "1ISP"){
-       showModal(modalDialog(title = "Warning",paste0("Asegurar que el ETF seleccionado es de renta fija. ")))
+       showModal(modalDialog(title = "WARNING",paste0("Asegurar que el ETF seleccionado es de renta fija. ")))
      }
    })
 
@@ -298,7 +298,7 @@ function(input, output, session) {
     Total2 <- merge(Total,e,by = c("Fondo"),all=TRUE)
     EfectivoFinal <- Total2$Monto.y - Total2$Monto.x
     Total2 <- data.frame(Total2$Fondo,Total2$Monto.x,Total2$Monto.y,EfectivoFinal)
-    colnames(Total2) <- c("Fondo","Monto Total","Efectivo","EfectivoFinal")
+    colnames(Total2) <- c("Fondo","MontoTotal","Efectivo","EfectivoFinal")
     
     fundv <- data.frame(Fondo=rowdatav$Fondo,Instrumento=rowdatav$Instrumento,Monto=rowdatav$Monto*-1,Titulos=rowdatav$Titulos*-1)
     fundd <- rowdatac
@@ -320,9 +320,16 @@ function(input, output, session) {
       indicese <- fundb$Instrumento %in% "EFECTIVO"
       indices <- ifelse(indicesf == TRUE, indicese,indicesf)
       nuevoindice <- Total2$Fondo %in% x
-      fundb$Monto[indices] <- Total2$EfectivoFinal[nuevoindice]
+      efectivor <- ifelse(is.na(Total2$MontoTotal[nuevoindice])==TRUE,0,Total2$MontoTotal[nuevoindice])
+      fundb$Monto[indices] <- fundb$Monto[indices] - efectivor
     }
-    
+    error <- ifelse(Total2$EfectivoFinal<0,TRUE,FALSE)
+    fond <- Total2$Fondo[error]
+    fond <- paste(fond[!is.na(fond)],collapse=",")
+    if(TRUE %in% error){
+      showModal(modalDialog(title = "ERROR",paste0("No hay suficiente efectivo para realizar la operacion ",
+                                                   "en los siguientes fondos: ",fond)))
+    }
     return(fundb)
   })
   
