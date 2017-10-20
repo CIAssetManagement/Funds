@@ -12,7 +12,6 @@ library(FundTools)
 instrumentos <- read.csv("Instrumentos.csv",header=TRUE)
 #Fondos
 fondos <- read.csv("Fondos.csv",header = TRUE)
-fondos <- fondos[-array(which(fondos$Emisora == 'TOTALES')),]
 #Mercados
 mercados <- read.csv("mercados.csv",header=TRUE,stringsAsFactors = FALSE)
 
@@ -242,9 +241,16 @@ function(input, output, session) {
 
   ####################################### Indicadores ##############################################
   
-  #durant <- PortfolioDuration(instrumentos,pesos)
+  #observe({
+  #  selected_fund <- input$fondo
+  #  indicesa <- dfunda$Fondo %in% selected_fund
+  #  instrumentos <- dfunda$Instrumento[indicesa]
+  #  
+  #  durant <- PortfolioDuration(instrumentos,pesos)
+  #  convexant <- PortfolioConvexity(instrumentos,pesos)
+  #})
+  
   #durdes <- PortfolioDuration(instrumentos,pesos)
-  #convexant <- PortfolioConvexity(instrumentos,pesos)
   #convexdes <- PortfolioConvexity(instrumentos,pesos)
   
   #Mensaje de error para la venta
@@ -283,6 +289,17 @@ function(input, output, session) {
   ind <- ifelse(efec$Instrumento=="EFECTIVO",efec$Titulos== 0,efec$Titulos==efec$Titulos)
   Tit <- data.frame(Titulos=ifelse(ind=="TRUE",efec$Titulos,0))
   dfunda <- data.frame(cbind(efec[,1:2]),Tit,Monto=efec$Monto)
+  #Porcentajes de los instrumentos
+  perc <- c()
+  for (i in seq(1,length(dfunda$Fondo),1)){
+    indice1 <- dfunda$Fondo %in% dfunda$Fondo[i]
+    indice2 <- dfunda$Instrumento %in% " -TOTALES- "
+    indices <- ifelse(indice1 == TRUE,indice2,indice1)
+    total <- dfunda$Monto[indices]
+    p <- round(dfunda$Monto[i]/total,digits = 2)
+    perc <- c(perc,p)
+  }
+  dfunda$Porcentaje <- perc
   e <- filter(efec,Instrumento=="EFECTIVO")
   
   #Data frame nueva foto Fondos
@@ -343,6 +360,9 @@ function(input, output, session) {
       efectivor <- ifelse(is.na(Total2$EfectivoFinal[nuevoindice])==TRUE,0,Total2$EfectivoFinal[nuevoindice])
       fundb$Monto[indices] <- efectivor
     }
+    
+    #######Poner totales y porcentajes################
+    
     error <- ifelse(Total2$EfectivoFinal<0,TRUE,FALSE)
     fond <- Total2$Fondo[error]
     fond <- paste(fond[!is.na(fond)],collapse=",")
