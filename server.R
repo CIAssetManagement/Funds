@@ -156,22 +156,29 @@ function(input, output, session) {
                                                                                  selected_valuev))
   })
   
+  #Update de los fondos seleccionados
+  observe({
+    selected_fund <- input$fondo
+    updateCheckboxGroupInput(session,"show_vars",selected=selected_fund)
+  })
+  
   #Calculo del monto o titulos venta
   montovv <- function(monto, precio){
-    if(monto == 0){
-      monto = input$titulosv*precio
+    if(monto == 0 | length(monto) == 0){
+      monto <-  floor(input$titulosv)*precio
     }
     else{
-      monto = input$montov
+      titulos <- floor(input$montov/precio)
+      monto <-  titulos*precio
     }
     return(monto)
   }
   titulosvv <- function(titulos,precio){
-    if(titulos == 0){
-      titulos = input$montov/precio
+    if(titulos == 0 | length(titulos) == 0){
+      titulos <-  floor(input$montov/precio)
     }
     else{
-      titulos = input$titulosv
+      titulos <-  floor(input$titulosv)
     }
     
     return(titulos)
@@ -179,20 +186,21 @@ function(input, output, session) {
   
   #Calculo del monto o titulos compra
   montocc <- function(monto, precio){
-    if(monto == 0){
-      monto = input$titulosg*precio
+    if(monto == 0 | length(monto) == 0){
+      monto <-  floor(input$titulosg)*precio
     }
     else{
-      monto = input$montog
+      titulos <- floor(input$montog/precio)
+      monto <- titulos*precio
     }
     return(monto)
   }
   tituloscc <- function(titulos,precio){
-    if(titulos == 0){
-      titulos = input$montog/precio
+    if(titulos == 0 | length(titulos) == 0){
+      titulos = floor(input$montog/precio)
     }
     else{
-      titulos = input$titulosg
+      titulos = floor(input$titulosg)
     }
     
     return(titulos)
@@ -234,22 +242,10 @@ function(input, output, session) {
 
   ####################################### Indicadores ##############################################
   
-  #portafolio <- fondos %>% filter(Fondo == "+CIBOLS" & I == "D")
-  #indices <- array(match(portafolio$Emisora, colnames(precios2)))
-  #titulos <- portafolio$Títulos / sum(portafolio$Títulos)
-  
-  
-  #portafolioa <- t(titulos * t(precios2[indices]))
-  #prices <- xts(portafolioa,as.Date(Fecha))
-  #rend <- rowSums(ROC(prices, type = "discrete"),na.rm = TRUE)
-  
-  ###Calculo del var###
-
-  #varant <- quantile(rend,0.05)
-  #vardes <- 0.05   
-  
-  ###Calculo del rendimineto###
-  #rendacu1 <- (prod(1 + rend/100) - 1)
+  #durant <- PortfolioDuration(instrumentos,pesos)
+  #durdes <- PortfolioDuration(instrumentos,pesos)
+  #convexant <- PortfolioConvexity(instrumentos,pesos)
+  #convexdes <- PortfolioConvexity(instrumentos,pesos)
   
   #Mensaje de error para la venta
  # if(varant<vardes){
@@ -329,14 +325,14 @@ function(input, output, session) {
     fundn <- rbind.data.frame(fundv,fundd)
     
     funds <- merge(dfunda,fundn,by=c("Fondo","Instrumento"), all=TRUE)
-    MontoA=ifelse(is.na(funds$Monto.x)==TRUE,0,funds$Monto.x)
-    TitulosA=ifelse(is.na(funds$Titulos.x)==TRUE,0,funds$Titulos.x)
-    MontoN=ifelse(is.na(funds$Monto.y)==TRUE,0,funds$Monto.y)
-    TitulosN=ifelse(is.na(funds$Titulos.y)==TRUE,0,funds$Titulos.y)
+    TitulosA=round(ifelse(is.na(funds$Titulos.x)==TRUE,0,funds$Titulos.x),digits = 0)
+    MontoA=round(ifelse(is.na(funds$Monto.x)==TRUE,0,funds$Monto.x),digits = 2)
+    TitulosN=round(ifelse(is.na(funds$Titulos.y)==TRUE,0,funds$Titulos.y),digits = 0)
+    MontoN=round(ifelse(is.na(funds$Monto.y)==TRUE,0,funds$Monto.y),digits = 2)
     funds <- data.frame(cbind(funds[,1:2],TitulosA,MontoA,TitulosN,MontoN))
     colnames(funds) <- c("Fondo", "Instrumento","TitulosA","MontoA","TitulosN","MontoN")
-    Titulos <- funds$TitulosA+funds$TitulosN
-    Monto <- funds$MontoA+funds$MontoN
+    Titulos <- round(funds$TitulosA+funds$TitulosN,digits = 0)
+    Monto <- round(funds$MontoA+funds$MontoN,digits = 2)
     fundb <- data.frame(cbind(funds[,1:2],Titulos,Monto))
     efectivo <- c()
     for (x in unique(fundb$Fondo)){
@@ -344,8 +340,8 @@ function(input, output, session) {
       indicese <- fundb$Instrumento %in% "EFECTIVO"
       indices <- ifelse(indicesf == TRUE, indicese,indicesf)
       nuevoindice <- Total2$Fondo %in% x
-      efectivor <- ifelse(is.na(Total2$MontoTotal[nuevoindice])==TRUE,0,Total2$MontoTotal[nuevoindice])
-      fundb$Monto[indices] <- fundb$Monto[indices] - efectivor
+      efectivor <- ifelse(is.na(Total2$EfectivoFinal[nuevoindice])==TRUE,0,Total2$EfectivoFinal[nuevoindice])
+      fundb$Monto[indices] <- efectivor
     }
     error <- ifelse(Total2$EfectivoFinal<0,TRUE,FALSE)
     fond <- Total2$Fondo[error]
@@ -353,6 +349,7 @@ function(input, output, session) {
     if(TRUE %in% error){
       showModal(modalDialog(title = "ERROR",paste0("No hay suficiente efectivo para realizar la operacion ",
                                                    "en los siguientes fondos: ",fond)))
+      stop()
     }
     return(fundb)
   })
@@ -361,7 +358,7 @@ function(input, output, session) {
  output$comprac <- renderTable({dfc()})
   output$prueba <- renderTable({dftotal()})
   
- options(DT.options = list(pageLength = 10))
+ options(DT.options = list(pageLength = 100))
  output$funda = DT::renderDataTable({subset(dfunda,Fondo %in% input$show_vars)})
  output$fundd = DT::renderDataTable({subset(dffund(),Fondo %in% input$show_vars)})
  #output$inda = DT::renderDataTable({})
