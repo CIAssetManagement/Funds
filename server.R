@@ -281,10 +281,110 @@ function(input, output, session) {
     }
 
   })
-
   
   #durdes <- PortfolioDuration(instrumentos,pesos)
   #convexdes <- PortfolioConvexity(instrumentos,pesos)
+  
+    ######################## Nuevas medidas con fundb ###############################
+  metricsd <- c()
+  dfindd <- eventReactive(input$summit,{
+    if(is.null(rowdatav) | is.null(rowdatac)) {
+      if(is.null(rowdatav)){
+        Totalc <- rowdatac %>% group_by(Fondo) %>% summarise(sum(Monto))
+        colnames(Totalc) <- c("Fondo", "MontoC")
+        Totalv <- data.frame(Fondo=Totalc$Fondo,MontoV=rep(0,length(Totalc$Fondo)))
+        Total <- merge(Totalc,Totalv,by=c("Fondo"), all=TRUE)
+        colnames(Total) <- c("Fondo", "MontoC","MontoV")
+      }
+      else{
+        Totalv <- rowdatav %>% group_by(Fondo) %>% summarise(sum(Monto))
+        colnames(Totalv) <- c("Fondo", "MontoV")
+        Totalc <- data.frame(Fondo=Totalv$Fondo,MontoC=rep(0,length(Totalv$Fondo)))
+        Total <- merge(Totalc,Totalv,by=c("Fondo"), all=TRUE)
+        colnames(Total) <- c("Fondo", "MontoC","MontoV")
+      }
+    }
+    else{
+      Totalc <- rowdatac %>% group_by(Fondo) %>% summarise(sum(Monto))
+      Totalv <- rowdatav %>% group_by(Fondo) %>% summarise(sum(Monto))
+      colnames(Totalc) <- c("Fondo", "MontoC")
+      colnames(Totalv) <- c("Fondo", "MontoV")
+      Total <- merge(Totalc,Totalv,by=c("Fondo"), all=TRUE)
+      colnames(Total) <- c("Fondo", "MontoC","MontoV")
+    }
+
+    Total2 <- data.frame(Total$Fondo,Instrumento="TOTAL",Total$MontoC,Total$MontoV) 
+    colnames(Total2) <- c("Fondo","Instrumento","MontoC","MontoV")
+    Total2 <- merge(Total,e,by = c("Fondo"),all=TRUE)
+    MontoTotal <- Total2$MontoC - Total2$MontoV
+    EfectivoFinal <- Total2$Monto - Total2$MontoC + Total2$MontoV
+    Total2 <- data.frame(Total2$Fondo,MontoTotal,Total2$Monto,EfectivoFinal)
+    colnames(Total2) <- c("Fondo","MontoTotal","Efectivo","EfectivoFinal")
+    
+    fundv <- data.frame(Fondo=rowdatav$Fondo,Instrumento=rowdatav$Instrumento,Monto=rowdatav$Monto*-1,Titulos=rowdatav$Titulos*-1)
+    fundd <- rowdatac
+    fundn <- rbind.data.frame(fundv,fundd)
+    
+    funds <- merge(dfunda,fundn,by=c("Fondo","Instrumento"), all=TRUE)
+    TitulosA=round(ifelse(is.na(funds$Titulos.x)==TRUE,0,funds$Titulos.x),digits = 0)
+    MontoA=round(ifelse(is.na(funds$Monto.x)==TRUE,0,funds$Monto.x),digits = 2)
+    TitulosN=round(ifelse(is.na(funds$Titulos.y)==TRUE,0,funds$Titulos.y),digits = 0)
+    MontoN=round(ifelse(is.na(funds$Monto.y)==TRUE,0,funds$Monto.y),digits = 2)
+    funds <- data.frame(cbind(funds[,1:2],TitulosA,MontoA,TitulosN,MontoN))
+    colnames(funds) <- c("Fondo", "Instrumento","TitulosA","MontoA","TitulosN","MontoN")
+    Titulos <- round(funds$TitulosA+funds$TitulosN,digits = 0)
+    Monto <- round(funds$MontoA+funds$MontoN,digits = 2)
+    fundb <- data.frame(cbind(funds[,1:2],Titulos,Monto))
+    efectivo <- c()
+    for (x in unique(fundb$Fondo)){
+      indicesf <- fundb$Fondo %in% x
+      indicese <- fundb$Instrumento %in% "EFECTIVO"
+      indices <- ifelse(indicesf == TRUE, indicese,indicesf)
+      nuevoindice <- Total2$Fondo %in% x
+      montoinicial <- fundb$Monto[indices]
+      cond <- is.na(Total2$EfectivoFinal[nuevoindice])
+      montofinal <- ifelse(cond==TRUE,montoinicial,Total2$EfectivoFinal[nuevoindice])
+      fundb$Monto[indices] <- montofinal
+    }
+    
+    error <- ifelse(Total2$EfectivoFinal<0,TRUE,FALSE)
+    fond <- Total2$Fondo[error]
+    fond <- paste(fond[!is.na(fond)],collapse=",")
+    if(TRUE %in% error){
+      showModal(modalDialog(title = "ERROR",paste0("No hay suficiente efectivo para realizar la operacion ",
+                                                   "en los siguientes fondos: ",fond)))
+      stop()
+    }
+    #Porcentajes de los fondos después de operaciones
+    perc <- c()
+    dias <- c()
+    for (i in seq(1,length(fundb$Fondo),1)){
+      #Porcentaje
+      indice1 <- fundb$Fondo %in% fundb$Fondo[i]
+      indice2 <- fundb$Instrumento %in% "-TOTALES-"
+      indices <- ifelse(indice1 == TRUE,indice2,indice1)
+      total <- fundb$Monto[indices]
+      p <- round(fundb$Monto[i]/total,digits = 2)
+      perc <- c(perc,p)
+      #Dias por vencer
+      bono <- get_bonds(fundb$Instrumento[i])
+      if(is.na(bono[1,1])==TRUE){
+        d <- '-'
+      } else {
+        vencimiento <- as.Date(bono$FechaVencimiento[1],format='%Y-%m-%d')
+        d <- vencimiento - Sys.Date()
+      }
+      dias <- c(dias,d)
+    }
+    fundb$Porcentaje <- perc
+    fundb$DiasxVencer <- dias
+    
+  ########### New Metrics #####################
+      #metricsd <- data.frame()
+    
+    return(metricsd)
+  })
+  #########################################################################################################
   
   #Mensaje de error para la venta
  # if(varant<vardes){
@@ -452,6 +552,6 @@ function(input, output, session) {
  output$funda = DT::renderDataTable({subset(dfunda,Fondo %in% input$show_vars)},rownames=FALSE)
  output$fundd = DT::renderDataTable({subset(dffund(),Fondo %in% input$show_vars)},rownames=FALSE)
  #output$inda = DT::renderDataTable({medidas})
- #output$indd = DT::renderDataTable({})
+ output$indd = DT::renderDataTable({dfindd()})
  output$inddx=renderPrint(input$indd_rows_selected)
 }
