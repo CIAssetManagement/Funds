@@ -11,9 +11,19 @@ library(FundTools)
 #Instrumentos
 instrumentos <- read.csv("Instrumentos.csv",header=TRUE)
 #Fondos
-fondos <- read.csv("Fondos.csv",header = TRUE)
+fondos <- read_excel("Fondos.xlsx")
+colnames(fondos) <- c("I","Fondo","TV","Emisora","Serie","Títulos","Costo.Total")
+fondos[is.na(fondos)] <- ""
 #Mercados
 mercados <- read.csv("mercados.csv",header=TRUE,stringsAsFactors = FALSE)
+
+#Dia hábil
+diah <-  function(fecha){
+  fechabase0 <- as.Date("2017-08-06")
+  entero <- as.integer(fecha - fechabase0 )
+  if(entero %% 7 == 6 | entero %% 7 == 0){return(diah(fecha-1))}
+  else {return(fecha)}
+}
 
 #Funcion que da las calificaciones de los instrumentos en los que puede invertir cada fondo
 calificaciones <- function(fondo,tv){
@@ -206,10 +216,10 @@ function(input, output, session) {
   }
   
   ###precio venta por instrumento
-  preciovv <- reactive({preciov <- get_prices(as.character(Sys.Date()-1),input$instrumentov)[1,2]
+  preciovv <- reactive({preciov <- get_prices(diah(Sys.Date()-1),input$instrumentov)[1,2]
   return(preciov)})
   ###precio compra por instrumento
-  preciocc <- reactive({precioc <- get_prices(as.character(Sys.Date()-1),input$instrumentoc)[1,2]
+  preciocc <- reactive({precioc <- get_prices(diah(Sys.Date()-1),input$instrumentoc)[1,2]
   return(precioc)})
   
   rowdatac<- c()
@@ -241,14 +251,37 @@ function(input, output, session) {
 
   ####################################### Indicadores ##############################################
   
-  #observe({
-  #  selected_fund <- input$fondo
-  #  indicesa <- dfunda$Fondo %in% selected_fund
-  #  instrumentos <- dfunda$Instrumento[indicesa]
-  #  
-  #  durant <- PortfolioDuration(instrumentos,pesos)
-  #  convexant <- PortfolioConvexity(instrumentos,pesos)
-  #})
+  observe({
+    selected_fund <- input$fondo
+    fondos <- c("+CIGUB","+CIGUMP","+CIGULP","+CIPLUS")
+    if (selected_fund %in% fondos){
+      especiales <- c("-TOTALES-","EFECTIVO", "0-CASITA-*")
+      fondo <- dfunda %>%
+        filter(!(Instrumento %in% especiales))
+      indicesa <- fondo$Fondo %in% selected_fund
+      instrumentos <- fondo$Instrumento[indicesa]
+      pesos <- fondo$Porcentaje[indicesa]
+      
+      durant <- round(PortfolioDuration(instrumentos,pesos)*360,digits=0)
+      convexant <- round(PortfolioConvexity(instrumentos,pesos),digits=0) 
+      varant <- paste0(round(PortfolioVaR(instrumentos,pesos)*100,digits=2),"%")
+      metrics <- data.frame(t(c(Fondo=selected_fund,Duracion=durant,Convexidad=convexant,VaR=varant)))
+      output$inda = DT::renderDataTable({metrics})
+    } else {
+      especiales <- c("-TOTALES-","EFECTIVO")
+      fondo <- dfunda %>%
+        filter(!(Instrumento %in% especiales))
+      indicesa <- fondo$Fondo %in% selected_fund
+      instrumentos <- fondo$Instrumento[indicesa]
+      pesos <- fondo$Porcentaje[indicesa]
+      
+      varant <- paste0(round(PortfolioVaR(instrumentos,pesos)*100,digits=2),"%")
+      metrics <- data.frame(t(c(Fondo=selected_fund,VaR=varant)))
+      output$inda = DT::renderDataTable({metrics})
+    }
+
+  })
+
   
   #durdes <- PortfolioDuration(instrumentos,pesos)
   #convexdes <- PortfolioConvexity(instrumentos,pesos)
@@ -289,17 +322,30 @@ function(input, output, session) {
   ind <- ifelse(efec$Instrumento=="EFECTIVO",efec$Titulos== 0,efec$Titulos==efec$Titulos)
   Tit <- data.frame(Titulos=ifelse(ind=="TRUE",efec$Titulos,0))
   dfunda <- data.frame(cbind(efec[,1:2]),Tit,Monto=efec$Monto)
-  #Porcentajes de los instrumentos
+  #Porcentajes de los instrumentos y dias por vencer
   perc <- c()
+  dias <- c()
   for (i in seq(1,length(dfunda$Fondo),1)){
+    #Porcentajes
     indice1 <- dfunda$Fondo %in% dfunda$Fondo[i]
-    indice2 <- dfunda$Instrumento %in% " -TOTALES- "
+    indice2 <- dfunda$Instrumento %in% "-TOTALES-"
     indices <- ifelse(indice1 == TRUE,indice2,indice1)
     total <- dfunda$Monto[indices]
     p <- round(dfunda$Monto[i]/total,digits = 2)
     perc <- c(perc,p)
+    #Dias por vencer
+    bono <- get_bonds(dfunda$Instrumento[i])
+    if(is.na(bono[1,1])==TRUE){
+      d <- '-'
+    } else {
+      vencimiento <- as.Date(bono$FechaVencimiento[1],format='%Y-%m-%d')
+      d <- vencimiento - Sys.Date()
+    }
+    dias <- c(dias,d)
   }
-  dfunda$Porcentaje <- perc
+  dfunda$Porcentaje  <- perc
+  dfunda$DiasxVencer <- dias
+  
   e <- filter(efec,Instrumento=="EFECTIVO")
   
   #Data frame nueva foto Fondos
@@ -357,11 +403,11 @@ function(input, output, session) {
       indicese <- fundb$Instrumento %in% "EFECTIVO"
       indices <- ifelse(indicesf == TRUE, indicese,indicesf)
       nuevoindice <- Total2$Fondo %in% x
-      efectivor <- ifelse(is.na(Total2$EfectivoFinal[nuevoindice])==TRUE,0,Total2$EfectivoFinal[nuevoindice])
-      fundb$Monto[indices] <- efectivor
+      montoinicial <- fundb$Monto[indices]
+      cond <- is.na(Total2$EfectivoFinal[nuevoindice])
+      montofinal <- ifelse(cond==TRUE,montoinicial,Total2$EfectivoFinal[nuevoindice])
+      fundb$Monto[indices] <- montofinal
     }
-    
-    #######Poner totales y porcentajes################
     
     error <- ifelse(Total2$EfectivoFinal<0,TRUE,FALSE)
     fond <- Total2$Fondo[error]
@@ -371,17 +417,41 @@ function(input, output, session) {
                                                    "en los siguientes fondos: ",fond)))
       stop()
     }
+    #Porcentajes de los fondos después de operaciones
+    perc <- c()
+    dias <- c()
+    for (i in seq(1,length(fundb$Fondo),1)){
+      #Porcentaje
+      indice1 <- fundb$Fondo %in% fundb$Fondo[i]
+      indice2 <- fundb$Instrumento %in% "-TOTALES-"
+      indices <- ifelse(indice1 == TRUE,indice2,indice1)
+      total <- fundb$Monto[indices]
+      p <- round(fundb$Monto[i]/total,digits = 2)
+      perc <- c(perc,p)
+      #Dias por vencer
+      bono <- get_bonds(fundb$Instrumento[i])
+      if(is.na(bono[1,1])==TRUE){
+        d <- '-'
+      } else {
+        vencimiento <- as.Date(bono$FechaVencimiento[1],format='%Y-%m-%d')
+        d <- vencimiento - Sys.Date()
+      }
+      dias <- c(dias,d)
+    }
+    fundb$Porcentaje <- perc
+    fundb$DiasxVencer <- dias
+    
     return(fundb)
   })
   
  output$ventav <- renderTable({dfv()})
  output$comprac <- renderTable({dfc()})
-  output$prueba <- renderTable({dftotal()})
+ #output$prueba <- renderTable({dftotal()})
   
  options(DT.options = list(pageLength = 100))
- output$funda = DT::renderDataTable({subset(dfunda,Fondo %in% input$show_vars)})
- output$fundd = DT::renderDataTable({subset(dffund(),Fondo %in% input$show_vars)})
- #output$inda = DT::renderDataTable({})
+ output$funda = DT::renderDataTable({subset(dfunda,Fondo %in% input$show_vars)},rownames=FALSE)
+ output$fundd = DT::renderDataTable({subset(dffund(),Fondo %in% input$show_vars)},rownames=FALSE)
+ #output$inda = DT::renderDataTable({medidas})
  #output$indd = DT::renderDataTable({})
  output$inddx=renderPrint(input$indd_rows_selected)
 }
