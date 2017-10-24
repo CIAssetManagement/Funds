@@ -80,8 +80,8 @@ fluidPage(
     div(DT::dataTableOutput("fundd"), style=estilo1),
     h2("Medidas de Riesgo Simulación",style = paste0("font-family: 'Roboto Slab', serif;
                  font-weight: 500; line-height: 1.1;color: #fefefe; ",estilo1)),
-    hr(style=estilor1)),
-    DT::dataTableOutput("indd"))
-    )
+    hr(style=estilor1),
+    div(DT::dataTableOutput("indd"),style=estilo1)))
+  )
 )
 

@@ -253,29 +253,28 @@ function(input, output, session) {
   
   observe({
     selected_fund <- input$fondo
+    
     fondos <- c("+CIGUB","+CIGUMP","+CIGULP","+CIPLUS")
+    especiales <- c("TOTALES","EFECTIVO", "0-CASITA-*")
+    fondo <- dfunda %>%
+      filter(!(Instrumento %in% especiales))
+    
+    indicesa <- fondo$Fondo %in% selected_fund
+    instrumentos <- fondo$Instrumento[indicesa]
+    pesos <- fondo$Porcentaje[indicesa]
+    titulos <- fondo$Titulos[indicesa]
+    
     if (selected_fund %in% fondos){
-      especiales <- c("-TOTALES-","EFECTIVO", "0-CASITA-*")
-      fondo <- dfunda %>%
-        filter(!(Instrumento %in% especiales))
-      indicesa <- fondo$Fondo %in% selected_fund
-      instrumentos <- fondo$Instrumento[indicesa]
-      pesos <- fondo$Porcentaje[indicesa]
       
       durant <- round(PortfolioDuration(instrumentos,pesos)*360,digits=0)
       convexant <- round(PortfolioConvexity(instrumentos,pesos),digits=0) 
-      varant <- paste0(round(PortfolioVaR(instrumentos,pesos)*100,digits=2),"%")
+      varant <- paste0(round(ValueAtRisk(instrumentos,titulos)*100,digits=2),"%")
       metrics <- data.frame(t(c(Fondo=selected_fund,Duracion=durant,Convexidad=convexant,VaR=varant)))
       output$inda = DT::renderDataTable({metrics})
-    } else {
-      especiales <- c("-TOTALES-","EFECTIVO")
-      fondo <- dfunda %>%
-        filter(!(Instrumento %in% especiales))
-      indicesa <- fondo$Fondo %in% selected_fund
-      instrumentos <- fondo$Instrumento[indicesa]
-      pesos <- fondo$Porcentaje[indicesa]
       
-      varant <- paste0(round(PortfolioVaR(instrumentos,pesos)*100,digits=2),"%")
+    } else {
+      
+      varant <- paste0(round(ValueAtRisk(instrumentos,titulos)*100,digits=2),"%")
       metrics <- data.frame(t(c(Fondo=selected_fund,VaR=varant)))
       output$inda = DT::renderDataTable({metrics})
     }
@@ -361,7 +360,7 @@ function(input, output, session) {
     for (i in seq(1,length(fundb$Fondo),1)){
       #Porcentaje
       indice1 <- fundb$Fondo %in% fundb$Fondo[i]
-      indice2 <- fundb$Instrumento %in% "-TOTALES-"
+      indice2 <- fundb$Instrumento %in% "TOTALES"
       indices <- ifelse(indice1 == TRUE,indice2,indice1)
       total <- fundb$Monto[indices]
       p <- round(fundb$Monto[i]/total,digits = 2)
@@ -380,7 +379,30 @@ function(input, output, session) {
     fundb$DiasxVencer <- dias
     
   ########### New Metrics #####################
-      #metricsd <- data.frame()
+    selected_fund <- input$fondo
+    
+    fondos <- c("+CIGUB","+CIGUMP","+CIGULP","+CIPLUS")
+    especiales <- c("TOTALES","EFECTIVO", "0-CASITA-*")
+    fondo <- fundb %>%
+      filter(!(Instrumento %in% especiales))
+    
+    indicesa <- fondo$Fondo %in% selected_fund
+    instrumentos <- fondo$Instrumento[indicesa]
+    pesos <- fondo$Porcentaje[indicesa]
+    titulos <- fondo$Titulos[indicesa]
+    
+    if (selected_fund %in% fondos){
+      
+      durdes <- round(PortfolioDuration(instrumentos,pesos)*360,digits=0)
+      convexdes <- round(PortfolioConvexity(instrumentos,pesos),digits=0) 
+      vardes <- paste0(round(ValueAtRisk(instrumentos,titulos)*100,digits=2),"%")
+      metricsd <- data.frame(t(c(Fondo=selected_fund,Duracion=durdes,Convexidad=convexdes,VaR=vardes)))
+      
+    } else {
+      
+      vardes <- paste0(round(ValueAtRisk(instrumentos,titulos)*100,digits=2),"%")
+      metricsd <- data.frame(t(c(Fondo=selected_fund,VaR=vardes)))
+    }
     
     return(metricsd)
   })
@@ -415,6 +437,7 @@ function(input, output, session) {
 
   #Data frame foto actual Fondos
   instrumento <- paste0(fondos$TV,"-",fondos$Emisora,"-",fondos$Serie)
+  instrumento <- ifelse(instrumento == "-TOTALES-","TOTALES",instrumento)
   dfunda <- data.frame(I=fondos$I,Fondo=fondos$Fondo,Instrumento=instrumento,Titulos=fondos$Títulos,Monto=fondos$Costo.Total)
   dfunda$Instrumento <- ifelse(dfunda$I!="R",as.character(dfunda$Instrumento),dfunda$Instrumento <- "EFECTIVO")
   efec <- dfunda %>% group_by(Fondo, Instrumento) %>% summarise(sum(Titulos), sum(Monto))
@@ -428,7 +451,7 @@ function(input, output, session) {
   for (i in seq(1,length(dfunda$Fondo),1)){
     #Porcentajes
     indice1 <- dfunda$Fondo %in% dfunda$Fondo[i]
-    indice2 <- dfunda$Instrumento %in% "-TOTALES-"
+    indice2 <- dfunda$Instrumento %in% "TOTALES"
     indices <- ifelse(indice1 == TRUE,indice2,indice1)
     total <- dfunda$Monto[indices]
     p <- round(dfunda$Monto[i]/total,digits = 2)
@@ -523,7 +546,7 @@ function(input, output, session) {
     for (i in seq(1,length(fundb$Fondo),1)){
       #Porcentaje
       indice1 <- fundb$Fondo %in% fundb$Fondo[i]
-      indice2 <- fundb$Instrumento %in% "-TOTALES-"
+      indice2 <- fundb$Instrumento %in% "TOTALES"
       indices <- ifelse(indice1 == TRUE,indice2,indice1)
       total <- fundb$Monto[indices]
       p <- round(fundb$Monto[i]/total,digits = 2)
