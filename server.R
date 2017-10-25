@@ -9,13 +9,13 @@ library(RMySQL)
 library(FundTools)
 
 #Instrumentos
-instrumentos <- read.csv("Instrumentos.csv",header=TRUE)
+instrumentos <- read.csv("//192.168.0.223/CIFONDOS/Instrumentos.csv",header=TRUE)
 #Fondos
-fondos <- read_excel("Fondos.xlsx")
+fondos <- read_excel("//192.168.0.223/CIFONDOS/Fondos.xlsx")
 colnames(fondos) <- c("I","Fondo","TV","Emisora","Serie","Títulos","Costo.Total")
 fondos[is.na(fondos)] <- ""
 #Mercados
-mercados <- read.csv("mercados.csv",header=TRUE,stringsAsFactors = FALSE)
+mercados <- read.csv("//192.168.0.223/CIFONDOS/mercados.csv",header=TRUE,stringsAsFactors = FALSE)
 
 #Dia hábil
 diah <-  function(fecha){
