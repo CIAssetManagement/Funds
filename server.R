@@ -370,14 +370,22 @@ function(input, output, session) {
       fundb$Monto[indices] <- montofinal
     }
     
+    #Falta efectivo para la compra
     error <- ifelse(Total2$EfectivoFinal<0,TRUE,FALSE)
     fond <- Total2$Fondo[error]
     fond <- paste(fond[!is.na(fond)],collapse=",")
+    #Vendiste de más
+    indices11 <- match(dfunda$Instrumento,rowdatav$Instrumento)
+    error2 <- ifelse(dfunda$Monto[indices11] < rowdatav$Monto,TRUE,FALSE)
+    fond2 <- dfunda$Instrumento[error2]
+    fond2 <- paste(fond2[!is.na(fond2)],collapse=",")
     if(TRUE %in% error){
-      showModal(modalDialog(title = "ERROR",paste0("No hay suficiente efectivo para realizar la operacion ",
-                                                   "en los siguientes fondos: ",fond)))
       stop()
     }
+    if(TRUE %in% error2){
+      stop()
+    }
+    
     #Porcentajes de los fondos después de operaciones
     perc <- c()
     dias <- c()
@@ -576,12 +584,23 @@ function(input, output, session) {
       fundb$Monto[indices] <- montofinal
     }
     
+    #No tienes suficiente efectivo
     error <- ifelse(Total2$EfectivoFinal<0,TRUE,FALSE)
     fond <- Total2$Fondo[error]
     fond <- paste(fond[!is.na(fond)],collapse=",")
+    #Vendiste de más
+    indices11 <- match(dfunda$Instrumento,rowdatav$Instrumento)
+    error2 <- ifelse(dfunda$Monto[indices11] < rowdatav$Monto,TRUE,FALSE)
+    fond2 <- dfunda$Instrumento[error2]
+    fond2 <- paste(fond2[!is.na(fond2)],collapse=",")
     if(TRUE %in% error){
       showModal(modalDialog(title = "ERROR",paste0("No hay suficiente efectivo para realizar la operacion ",
                                                    "en los siguientes fondos: ",fond)))
+      stop()
+    }
+    if(TRUE %in% error2){
+      showModal(modalDialog(title = "ERROR",paste0("No tienes suficientes títulos para realizar la venta ",
+                                                   "de los siguientes instrumentos: ",fond2)))
       stop()
     }
     #Porcentajes de los fondos después de operaciones
@@ -607,6 +626,8 @@ function(input, output, session) {
     }
     fundb$Porcentaje <- perc
     fundb$DiasxVencer <- dias
+    nuevos <- !(fundb$Instrumento %in% dfunda$Instrumento)
+    fundb$NvoInstrumento <- ifelse(nuevos==FALSE,"",nuevos)
     
     fundb$Titulos <- comma(fundb$Titulos)
     fundb$Monto <- print.default(paste0("$", formatC(as.numeric(fundb$Monto),format="f", digits=2, big.mark=",")))
