@@ -380,21 +380,12 @@ function(input, output, session) {
     error2 <- ifelse(dfunda$Monto[indices11] < rowdatav$Monto,TRUE,FALSE)
     fond2 <- dfunda$Instrumento[error2]
     fond2 <- paste(fond2[!is.na(fond2)],collapse=",")
-<<<<<<< HEAD
-
-=======
->>>>>>> 078f77faf6e32059a6c4a9e6216f5b914f53e805
     if(TRUE %in% error){
       stop()
     }
     if(TRUE %in% error2){
       stop()
     }
-<<<<<<< HEAD
-
-=======
-    
->>>>>>> 078f77faf6e32059a6c4a9e6216f5b914f53e805
     #Porcentajes de los fondos después de operaciones
     perc <- c()
     dias <- c()
@@ -638,12 +629,9 @@ function(input, output, session) {
     fundb$DiasxVencer <- dias
     nuevos <- !(fundb$Instrumento %in% dfunda$Instrumento)
     fundb$NvoInstrumento <- ifelse(nuevos==FALSE,"",nuevos)
-<<<<<<< HEAD
-=======
-    
+
     fundb$Titulos <- comma(fundb$Titulos)
     fundb$Monto <- print.default(paste0("$", formatC(as.numeric(fundb$Monto),format="f", digits=2, big.mark=",")))
->>>>>>> 078f77faf6e32059a6c4a9e6216f5b914f53e805
     
     return(fundb)
   })
