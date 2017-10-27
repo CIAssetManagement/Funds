@@ -1,8 +1,8 @@
 library(shiny)
-library(readxl)
 
 #Fondos
-fondos <- read_excel("//192.168.0.223/CIFONDOS/Fondos.xlsx")
+#Fondos
+fondos <- read_excel("//192.168.0.223/CIFONDOS/Fondos2.xlsx")
 namesfondos <- as.character(unique(fondos$Fondo))
 
 estilo <- "width: 90%; height:90%; position:relative; right:170px"

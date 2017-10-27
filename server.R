@@ -1,5 +1,4 @@
 library(shiny)
-library(ggplot2)
 library(DT)
 library(dplyr)
 library(readxl)
@@ -7,15 +6,20 @@ library(xts)
 library(quantmod)
 library(RMySQL)
 library(FundTools)
+library(scales)
+
 
 #Instrumentos
-instrumentos <- read.csv("//192.168.0.223/CIFONDOS/Instrumentos.csv",header=TRUE)
+instrumentos <- read.csv("//192.168.0.223/CIFONDOS/Instrumentos.csv",header=TRUE,stringsAsFactors = FALSE)
 #Fondos
-fondos <- read_excel("//192.168.0.223/CIFONDOS/Fondos.xlsx")
+fondos <- read_excel("//192.168.0.223/CIFONDOS/Fondos2.xlsx")
 colnames(fondos) <- c("I","Fondo","TV","Emisora","Serie","Títulos","Costo.Total")
 fondos[is.na(fondos)] <- ""
 #Mercados
 mercados <- read.csv("//192.168.0.223/CIFONDOS/mercados.csv",header=TRUE,stringsAsFactors = FALSE)
+#Restricciones de los fondos
+#maximo <- read_excel("//192.168.0.223/CIFONDOS/limites.xlsx")
+#minimo <- read_excel("//192.168.0.223/CIFONDOS/limites.xlsx")
 
 #Dia hábil
 diah <-  function(fecha){
@@ -283,6 +287,7 @@ function(input, output, session) {
     } else {
       
       varant <- paste0(round(ValueAtRisk(instrumentos,titulos)*100,digits=2),"%")
+      metrics <- data.frame(t(c(Fondo=selected_fund)))
       metrics <- data.frame(t(c(Fondo=selected_fund,VaR=varant)))
       output$inda = DT::renderDataTable({metrics})
     }
@@ -341,9 +346,11 @@ function(input, output, session) {
     Total2 <- data.frame(Total2$Fondo,MontoTotal,Total2$Monto,EfectivoFinal)
     colnames(Total2) <- c("Fondo","MontoTotal","Efectivo","EfectivoFinal")
     
-    fundv <- data.frame(Fondo=rowdatav$Fondo,Instrumento=rowdatav$Instrumento,Monto=rowdatav$Monto*-1,Titulos=rowdatav$Titulos*-1)
-    fundd <- rowdatac
-    fundn <- rbind.data.frame(fundv,fundd)
+    fundv <- data.frame(Fondo=rowdatav$Fondo,Instrumento=rowdatav$Instrumento,Monto=rowdatav$Monto*-1,
+                        Titulos=rowdatav$Titulos*-1)
+    fundc <- rowdatac
+    fundn <- rbind.data.frame(fundv,fundc)
+    fundn <- fundn %>% group_by(Fondo, Instrumento) %>% summarise(Titulos=sum(Titulos),Monto=sum(Monto))
     
     dfunda$Titulos <- as.numeric(gsub(",","",dfunda$Titulos))
     dfunda$Monto <- substr(dfunda$Monto, 2, 100)
@@ -376,10 +383,20 @@ function(input, output, session) {
     fond <- Total2$Fondo[error]
     fond <- paste(fond[!is.na(fond)],collapse=",")
     #Vendiste de más
-    indices11 <- match(dfunda$Instrumento,rowdatav$Instrumento)
-    error2 <- ifelse(dfunda$Monto[indices11] < rowdatav$Monto,TRUE,FALSE)
-    fond2 <- dfunda$Instrumento[error2]
-    fond2 <- paste(fond2[!is.na(fond2)],collapse=",")
+    error2 <- c()
+    for (i in seq(1,length(dfunda$Instrumento),1)){
+      indice <- match(fundn$Instrumento,dfunda$Instrumento[i])
+      indice <- indice[!is.na(indice)]
+      if(length(indice) > 0){
+        if(dfunda$Monto[i] + fundn$Monto[indice] < 0){
+          error2 <- c(error2,TRUE)
+        } else {
+          error2 <- c(error2,FALSE)
+        }
+      } else {
+        error2 <- c(error2,FALSE)
+      }
+    }
     if(TRUE %in% error){
       stop()
     }
@@ -438,25 +455,9 @@ function(input, output, session) {
     
     return(metricsd)
   })
-  #########################################################################################################
-  
-  #Mensaje de error para la venta
- # if(varant<vardes){
- #observeEvent(input$addv, {
- #   showModal(modalDialog(title = "ERROR",paste0("No se puede vender ",
- #   titulosvv(input$titulosv,preciovv())," titulos de ",input$instrumentov," sobrepsa el VaR permitido")))
- #})}
-
-  #Mensaje de error para la compra
-  # if(varant<vardes){
-  # observeEvent(input$addc, {
-  #   showModal(modalDialog(title = "ERROR",paste0("No se puede comprar ",
-  #   tituloscc(input$titulosg,preciocc())," titulos de ",input$instrumentoc," sobrepsa el VaR permitido")))
-  # })}
-  # 
   
   #Warning para compra de ETFs
-   observeEvent(input$addc, {
+   observeEvent(input$TipoValorc, {
      selected_fund <- input$fondo
      selected_type <- input$TipoValorc
      if(selected_fund == "+CIUSD" & selected_type == "1ISP"){
@@ -470,9 +471,15 @@ function(input, output, session) {
   #Data frame foto actual Fondos
   instrumento <- paste0(fondos$TV,"-",fondos$Emisora,"-",fondos$Serie)
   instrumento <- ifelse(instrumento == "-TOTALES-","TOTALES",instrumento)
-  dfunda <- data.frame(I=fondos$I,Fondo=fondos$Fondo,Instrumento=instrumento,Titulos=fondos$Títulos,Monto=fondos$Costo.Total)
-  dfunda$Instrumento <- ifelse(dfunda$I!="R",as.character(dfunda$Instrumento),dfunda$Instrumento <- "EFECTIVO")
-  efec <- dfunda %>% group_by(Fondo, Instrumento) %>% summarise(sum(Titulos), sum(Monto))
+  dfunda <- fondos
+  colnames(dfunda) <- c("I","Fondo","TV","Emisora","Serie","Titulos","Monto")
+  dfunda$Instrumento <- as.character(instrumento)
+  dfunda$Instrumento <- ifelse(dfunda$I!="R",dfunda$Instrumento,dfunda$Instrumento <- "EFECTIVO")
+  dfunda$TV <- NULL
+  dfunda$Emisora <-  NULL
+  dfunda$Serie <- NULL
+  efec <- dfunda %>% group_by(Fondo, Instrumento) %>% summarise(sum(Titulos), 
+                                                                sum(Monto))
   colnames(efec) <- c("Fondo","Instrumento","Titulos","Monto")
   ind <- ifelse(efec$Instrumento=="EFECTIVO",efec$Titulos== 0,efec$Titulos==efec$Titulos)
   Tit <- data.frame(Titulos=ifelse(ind=="TRUE",efec$Titulos,0))
@@ -503,7 +510,7 @@ function(input, output, session) {
   dfunda$DiasxVencer <- dias
   
  dfunda$Titulos <- comma(dfunda$Titulos)
- dfunda$Monto <- print.default(paste0("$", formatC(as.numeric(dfunda$Monto),format="f", digits=2, big.mark=","))) 
+ dfunda$Monto <- paste0("$", formatC(as.numeric(dfunda$Monto),format="f", digits=2, big.mark=","))
   
   e <- filter(efec,Instrumento=="EFECTIVO")
   
@@ -555,8 +562,9 @@ function(input, output, session) {
     colnames(Total2) <- c("Fondo","MontoTotal","Efectivo","EfectivoFinal")
     
     fundv <- data.frame(Fondo=rowdatav$Fondo,Instrumento=rowdatav$Instrumento,Monto=rowdatav$Monto*-1,Titulos=rowdatav$Titulos*-1)
-    fundd <- rowdatac
-    fundn <- rbind.data.frame(fundv,fundd)
+    fundc <- rowdatac
+    fundn <- rbind.data.frame(fundv,fundc)
+    fundn <- fundn %>% group_by(Fondo, Instrumento) %>% summarise(Titulos=sum(Titulos),Monto=sum(Monto))
     
     dfunda$Titulos <- as.numeric(gsub(",","",dfunda$Titulos))
     dfunda$Monto <- substr(dfunda$Monto, 2, 100)
@@ -584,13 +592,25 @@ function(input, output, session) {
       fundb$Monto[indices] <- montofinal
     }
     
-    #No tienes suficiente efectivo
+    #No tienes suficiente efectivo para la compra
     error <- ifelse(Total2$EfectivoFinal<0,TRUE,FALSE)
     fond <- Total2$Fondo[error]
     fond <- paste(fond[!is.na(fond)],collapse=",")
     #Vendiste de más
-    indices11 <- match(dfunda$Instrumento,rowdatav$Instrumento)
-    error2 <- ifelse(dfunda$Monto[indices11] < rowdatav$Monto,TRUE,FALSE)
+    error2 <- c()
+    for (i in seq(1,length(dfunda$Instrumento),1)){
+      indice <- match(fundn$Instrumento,dfunda$Instrumento[i])
+      indice <- indice[!is.na(indice)]
+      if(length(indice) > 0){
+        if(dfunda$Monto[i] + fundn$Monto[indice] < 0){
+          error2 <- c(error2,TRUE)
+        } else {
+          error2 <- c(error2,FALSE)
+        }
+      } else {
+        error2 <- c(error2,FALSE)
+      }
+    }
     fond2 <- dfunda$Instrumento[error2]
     fond2 <- paste(fond2[!is.na(fond2)],collapse=",")
     if(TRUE %in% error){
@@ -603,6 +623,11 @@ function(input, output, session) {
                                                    "de los siguientes instrumentos: ",fond2)))
       stop()
     }
+    ######################################################################################################
+    #Revisando las políticas de inversión de los fondos
+    
+    
+    
     #Porcentajes de los fondos después de operaciones
     perc <- c()
     dias <- c()
@@ -627,8 +652,11 @@ function(input, output, session) {
     }
     fundb$Porcentaje <- perc
     fundb$DiasxVencer <- dias
-    nuevos <- !(fundb$Instrumento %in% dfunda$Instrumento)
-    fundb$NvoInstrumento <- ifelse(nuevos==FALSE,"",nuevos)
+    #Operaciones realizadas
+    n1 <- fundb$Instrumento %in% rowdatav$Instrumento
+    n2 <- fundb$Instrumento %in% rowdatac$Instrumento
+    nuevos <- ifelse(n1 == FALSE,n2,n1)
+    fundb$Nuevo <- ifelse(nuevos==FALSE,"",nuevos)
 
     fundb$Titulos <- comma(fundb$Titulos)
     fundb$Monto <- print.default(paste0("$", formatC(as.numeric(fundb$Monto),format="f", digits=2, big.mark=",")))
