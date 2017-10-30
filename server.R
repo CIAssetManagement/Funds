@@ -8,13 +8,17 @@ library(RMySQL)
 library(FundTools)
 library(scales)
 
+#Matando la notación científica
+options(scipen = 999)
 
 #Instrumentos
 instrumentos <- read.csv("//192.168.0.223/CIFONDOS/Instrumentos.csv",header=TRUE,stringsAsFactors = FALSE)
 #Fondos
-fondos <- read_excel("//192.168.0.223/CIFONDOS/Fondos2.xlsx")
+fondos <- read_excel("//192.168.0.223/CIFONDOS/Fondos.xlsx")
 colnames(fondos) <- c("I","Fondo","TV","Emisora","Serie","Títulos","Costo.Total")
 fondos[is.na(fondos)] <- ""
+fondos$Títulos <- as.numeric(as.character(fondos$Títulos))
+fondos$Costo.Total <- as.numeric(as.character(fondos$Costo.Total))
 #Mercados
 mercados <- read.csv("//192.168.0.223/CIFONDOS/mercados.csv",header=TRUE,stringsAsFactors = FALSE)
 #Restricciones de los fondos
@@ -278,8 +282,8 @@ function(input, output, session) {
     
     if (selected_fund %in% fondos){
       
-      durant <- round(PortfolioDuration(instrumentos,pesos)*360,digits=0)
-      convexant <- round(PortfolioConvexity(instrumentos,pesos),digits=0) 
+      durant <- round(PortfolioDuration(diah(Sys.Date()-1),instrumentos,pesos)*360,digits=0)
+      convexant <- round(PortfolioConvexity(diah(Sys.Date()-1),instrumentos,pesos),digits=0) 
       varant <- paste0(round(ValueAtRisk(instrumentos,titulos)*100,digits=2),"%")
       metrics <- data.frame(t(c(Fondo=selected_fund,Duracion=durant,Convexidad=convexant,VaR=varant)))
       output$inda = DT::renderDataTable({metrics})
@@ -294,8 +298,6 @@ function(input, output, session) {
 
   })
   
-  #durdes <- PortfolioDuration(instrumentos,pesos)
-  #convexdes <- PortfolioConvexity(instrumentos,pesos)
   
     ######################## Nuevas medidas con fundb ###############################
   metricsd <- c()
@@ -430,7 +432,7 @@ function(input, output, session) {
   ########### New Metrics #####################
     selected_fund <- input$fondo
     
-    fondos <- c("+CIGUB","+CIGUMP","+CIGULP","+CIPLUS")
+    fondoss <- c("+CIGUB","+CIGUMP","+CIGULP","+CIPLUS")
     especiales <- c("TOTALES","EFECTIVO", "0-CASITA-*")
     fondo <- fundb %>%
       filter(!(Instrumento %in% especiales))
@@ -440,10 +442,10 @@ function(input, output, session) {
     pesos <- fondo$Porcentaje[indicesa]
     titulos <- fondo$Titulos[indicesa]
     
-    if (selected_fund %in% fondos){
+    if (selected_fund %in% fondoss){
       
-      durdes <- round(PortfolioDuration(instrumentos,pesos)*360,digits=0)
-      convexdes <- round(PortfolioConvexity(instrumentos,pesos),digits=0) 
+      durdes <- round(PortfolioDuration(diah(Sys.Date()-1),instrumentos,pesos)*360,digits=0)
+      convexdes <- round(PortfolioConvexity(diah(Sys.Date()-1),instrumentos,pesos),digits=0) 
       vardes <- paste0(round(ValueAtRisk(instrumentos,titulos)*100,digits=2),"%")
       metricsd <- data.frame(t(c(Fondo=selected_fund,Duracion=durdes,Convexidad=convexdes,VaR=vardes)))
       
@@ -457,7 +459,7 @@ function(input, output, session) {
   })
   
   #Warning para compra de ETFs
-   observeEvent(input$TipoValorc, {
+   observeEvent(input$instrumentoc, {
      selected_fund <- input$fondo
      selected_type <- input$TipoValorc
      if(selected_fund == "+CIUSD" & selected_type == "1ISP"){
@@ -475,9 +477,6 @@ function(input, output, session) {
   colnames(dfunda) <- c("I","Fondo","TV","Emisora","Serie","Titulos","Monto")
   dfunda$Instrumento <- as.character(instrumento)
   dfunda$Instrumento <- ifelse(dfunda$I!="R",dfunda$Instrumento,dfunda$Instrumento <- "EFECTIVO")
-  dfunda$TV <- NULL
-  dfunda$Emisora <-  NULL
-  dfunda$Serie <- NULL
   efec <- dfunda %>% group_by(Fondo, Instrumento) %>% summarise(sum(Titulos), 
                                                                 sum(Monto))
   colnames(efec) <- c("Fondo","Instrumento","Titulos","Monto")
@@ -631,7 +630,6 @@ function(input, output, session) {
     #Porcentajes de los fondos después de operaciones
     perc <- c()
     dias <- c()
-    op <- c()
     for (i in seq(1,length(fundb$Fondo),1)){
       #Porcentaje
       indice1 <- fundb$Fondo %in% fundb$Fondo[i]
