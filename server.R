@@ -180,6 +180,12 @@ function(input, output, session) {
     updateCheckboxGroupInput(session,"show_vars",selected=selected_fund)
   })
   
+  #Bloqueo de titulos o monto
+  shinyjs::onclick("montov",shinyjs::disable("titulosv") & shinyjs::enable("montov"))
+  shinyjs::onclick("titulosv",shinyjs::disable("montov") & shinyjs::enable("titulosv"))
+  shinyjs::onclick("montog",shinyjs::disable("titulosg") & shinyjs::enable("montog"))
+  shinyjs::onclick("titulosg",shinyjs::disable("montog") & shinyjs::enable("titulosg"))
+  
   #Calculo del monto o titulos venta
   montovv <- function(monto, precio){
     if(monto == 0 | length(monto) == 0){
