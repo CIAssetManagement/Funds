@@ -134,6 +134,12 @@ instrumentocompra <- function(nombre,tv,emisora){
   return(instrumento)
 }
 
+#Bloqueo de titulos o monto
+  shinyjs::onclick("montov",shinyjs::disable("titulosv") & shinyjs::enable("montov"))
+  shinyjs::onclick("titulosv",shinyjs::disable("montov") & shinyjs::enable("titulosv"))
+  shinyjs::onclick("montog",shinyjs::disable("titulosg") & shinyjs::enable("montog"))
+  shinyjs::onclick("titulosg",shinyjs::disable("montog") & shinyjs::enable("titulosg"))
+
 #Función servidor
 function(input, output, session) {
   
