@@ -1,4 +1,5 @@
 library(shiny)
+library(shinyjs)
 
 #Fondos
 #Fondos
@@ -11,7 +12,7 @@ estilo1 <- "width: 100%; height:90%; position:relative; right:100px"
 estilor1 <- "width: 103%; position:relative; right:100px"
 
 fluidPage(
-  
+  useShinyjs(),
   tags$head(
     tags$style(HTML("
                     @import url('https://fonts.googleapis.com/css?family=Roboto+Slab');
