@@ -311,7 +311,6 @@ function(input, output, session) {
   
   
     ######################## Nuevas medidas con fundb ###############################
-  metricsd <- c()
   dfindd <- eventReactive(input$summit,{
     
     if(is.null(rowdatav) | is.null(rowdatac)) {
@@ -766,7 +765,7 @@ function(input, output, session) {
  options(DT.options = list(pageLength = 100))
  output$funda = DT::renderDataTable({subset(dfunda,Fondo %in% input$show_vars)},rownames=FALSE)
  output$fundd = DT::renderDataTable({subset(dffund(),Fondo %in% input$show_vars)},rownames=FALSE)
- output$indd = DT::renderDataTable({dfindd()})
+ output$indd = DT::renderDataTable({subset(dfindd(),Fondo %in% input$show_vars)})
  output$inddx=renderPrint(input$indd_rows_selected)
- output$warn = DT::renderDataTable({warnings()})
+ output$warn = DT::renderDataTable({subset(warnings(),Fondo %in% input$show_vars)})
 }
