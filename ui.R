@@ -64,6 +64,9 @@ fluidPage(
     #h4('PRUEBA TOTAL',style="margin:80px 0 0 0;"),
     #div(style="align:left; position:relative; top:20px;",tableOutput('prueba'))),
   
+  #fluidRow(
+  #  div(DT::dataTableOutput("warn")),
+  
   fluidRow(
     div(checkboxGroupInput("show_vars","Selecciona el Fondo:",namesfondos,namesfondos,inline=TRUE,width="100%"),
         style=paste0("color: #fefefe; ",estilo)),
@@ -85,5 +88,6 @@ fluidPage(
     hr(style=estilor1),
     div(DT::dataTableOutput("indd"),style=estilo1)))
   )
+  #)
 )
 

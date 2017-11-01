@@ -7,6 +7,7 @@ library(quantmod)
 library(RMySQL)
 library(FundTools)
 library(scales)
+library(shinyjs)
 
 #Matando la notación científica
 options(scipen = 999)
@@ -22,8 +23,8 @@ fondos$Costo.Total <- as.numeric(as.character(fondos$Costo.Total))
 #Mercados
 mercados <- read.csv("//192.168.0.223/CIFONDOS/mercados.csv",header=TRUE,stringsAsFactors = FALSE)
 #Restricciones de los fondos
-#maximo <- read_excel("//192.168.0.223/CIFONDOS/limites.xlsx")
-#minimo <- read_excel("//192.168.0.223/CIFONDOS/limites.xlsx")
+maximo <- read_excel("//192.168.0.223/CIFONDOS/limites.xlsx",sheet = "Maximo")
+minimo <- read_excel("//192.168.0.223/CIFONDOS/limites.xlsx",sheet = "Minimo")
 
 #Dia hábil
 diah <-  function(fecha){
@@ -284,15 +285,19 @@ function(input, output, session) {
       
       durant <- round(PortfolioDuration(diah(Sys.Date()-1),instrumentos,pesos)*360,digits=0)
       convexant <- round(PortfolioConvexity(diah(Sys.Date()-1),instrumentos,pesos),digits=0) 
-      varant <- paste0(round(ValueAtRisk(instrumentos,titulos)*100,digits=2),"%")
-      metrics <- data.frame(t(c(Fondo=selected_fund,Duracion=durant,Convexidad=convexant,VaR=varant)))
+      valueant <- RiskValues(instrumentos,titulos)
+      varant <- paste0(round(valueant$VaR*100,digits=2),"%")
+      cvarant <- paste0(round(valueant$CVaR*100,digits=2),"%")
+      metrics <- data.frame(t(c(Fondo=selected_fund,Duracion=durant,Convexidad=convexant,VaR=varant,CVaR=cvarant)))
       output$inda = DT::renderDataTable({metrics})
       
     } else {
       
-      varant <- paste0(round(ValueAtRisk(instrumentos,titulos)*100,digits=2),"%")
+      valueant <- RiskValues(instrumentos,titulos)
+      varant <- paste0(round(valueant$VaR*100,digits=2),"%")
+      cvarant <- paste0(round(valueant$CVaR*100,digits=2),"%")
       metrics <- data.frame(t(c(Fondo=selected_fund)))
-      metrics <- data.frame(t(c(Fondo=selected_fund,VaR=varant)))
+      metrics <- data.frame(t(c(Fondo=selected_fund,VaR=varant,CVaR=cvarant)))
       output$inda = DT::renderDataTable({metrics})
     }
 
@@ -380,31 +385,6 @@ function(input, output, session) {
       fundb$Monto[indices] <- montofinal
     }
     
-    #Falta efectivo para la compra
-    error <- ifelse(Total2$EfectivoFinal<0,TRUE,FALSE)
-    fond <- Total2$Fondo[error]
-    fond <- paste(fond[!is.na(fond)],collapse=",")
-    #Vendiste de más
-    error2 <- c()
-    for (i in seq(1,length(dfunda$Instrumento),1)){
-      indice <- match(fundn$Instrumento,dfunda$Instrumento[i])
-      indice <- indice[!is.na(indice)]
-      if(length(indice) > 0){
-        if(dfunda$Monto[i] + fundn$Monto[indice] < 0){
-          error2 <- c(error2,TRUE)
-        } else {
-          error2 <- c(error2,FALSE)
-        }
-      } else {
-        error2 <- c(error2,FALSE)
-      }
-    }
-    if(TRUE %in% error){
-      stop()
-    }
-    if(TRUE %in% error2){
-      stop()
-    }
     #Porcentajes de los fondos después de operaciones
     perc <- c()
     dias <- c()
@@ -416,18 +396,8 @@ function(input, output, session) {
       total <- fundb$Monto[indices]
       p <- round(fundb$Monto[i]/total,digits = 2)
       perc <- c(perc,p)
-      #Dias por vencer
-      bono <- get_bonds(fundb$Instrumento[i])
-      if(is.na(bono[1,1])==TRUE){
-        d <- '-'
-      } else {
-        vencimiento <- as.Date(bono$FechaVencimiento[1],format='%Y-%m-%d')
-        d <- vencimiento - Sys.Date()
-      }
-      dias <- c(dias,d)
     }
     fundb$Porcentaje <- perc
-    fundb$DiasxVencer <- dias
     
   ########### New Metrics #####################
     selected_fund <- input$fondo
@@ -445,14 +415,18 @@ function(input, output, session) {
     if (selected_fund %in% fondoss){
       
       durdes <- round(PortfolioDuration(diah(Sys.Date()-1),instrumentos,pesos)*360,digits=0)
-      convexdes <- round(PortfolioConvexity(diah(Sys.Date()-1),instrumentos,pesos),digits=0) 
-      vardes <- paste0(round(ValueAtRisk(instrumentos,titulos)*100,digits=2),"%")
-      metricsd <- data.frame(t(c(Fondo=selected_fund,Duracion=durdes,Convexidad=convexdes,VaR=vardes)))
+      convexdes <- round(PortfolioConvexity(diah(Sys.Date()-1),instrumentos,pesos),digits=0)
+      valuesdes <- RiskValues(instrumentos,titulos)
+      vardes <- paste0(round(valuesdes$VaR*100,digits=2),"%")
+      cvardes <- paste0(round(valuesdes$CVaR*100,digits=2),"%")
+      metricsd <- data.frame(t(c(Fondo=selected_fund,Duracion=durdes,Convexidad=convexdes,VaR=vardes,CVaR=cvardes)))
       
     } else {
       
-      vardes <- paste0(round(ValueAtRisk(instrumentos,titulos)*100,digits=2),"%")
-      metricsd <- data.frame(t(c(Fondo=selected_fund,VaR=vardes)))
+      valuedes <- RiskValues(instrumentos,titulos)
+      vardes <- paste0(round(valuedes$VaR*100,digits=2),"%")
+      cvardes <- paste0(round(valuedes$CVaR*100,digits=2),"%")
+      metricsd <- data.frame(t(c(Fondo=selected_fund,VaR=vardes,CVaR=cvardes)))
     }
     
     return(metricsd)
@@ -469,6 +443,7 @@ function(input, output, session) {
        showModal(modalDialog(title = "WARNING",paste0("Asegurar que el ETF seleccionado es de renta fija. ")))
      }
    })
+   
 
   #Data frame foto actual Fondos
   instrumento <- paste0(fondos$TV,"-",fondos$Emisora,"-",fondos$Serie)
@@ -662,13 +637,130 @@ function(input, output, session) {
     return(fundb)
   })
   
+  #Warnings generales
+  #Data frame nueva foto Fondos
+  # warnings <- eventReactive(input$summit,{
+  #   selected_fund <- input$fondo
+  #   if(is.null(rowdatav) | is.null(rowdatac)) {
+  #     if(is.null(rowdatav)){
+  #       rowdatac$Titulos <- as.numeric(gsub(",","",rowdatac$Titulos)) 
+  #       rowdatac$Monto <- substr(rowdatac$Monto, 2, 100)
+  #       rowdatac$Monto <- as.numeric(gsub(",","",rowdatac$Monto))
+  #       Totalc <- rowdatac %>% group_by(Fondo) %>% summarise(sum(Monto))
+  #       colnames(Totalc) <- c("Fondo", "MontoC")
+  #       Totalv <- data.frame(Fondo=Totalc$Fondo,MontoV=rep(0,length(Totalc$Fondo)))
+  #       Total <- merge(Totalc,Totalv,by=c("Fondo"), all=TRUE)
+  #       colnames(Total) <- c("Fondo", "MontoC","MontoV")
+  #     }
+  #     else{
+  #       rowdatav$Titulos <- as.numeric(gsub(",","",rowdatav$Titulos))
+  #       rowdatav$Monto <- substr(rowdatav$Monto, 2, 100)
+  #       rowdatav$Monto <- as.numeric(gsub(",","",rowdatav$Monto))
+  #       Totalv <- rowdatav %>% group_by(Fondo) %>% summarise(sum(Monto))
+  #       colnames(Totalv) <- c("Fondo", "MontoV")
+  #       Totalc <- data.frame(Fondo=Totalv$Fondo,MontoC=rep(0,length(Totalv$Fondo)))
+  #       Total <- merge(Totalc,Totalv,by=c("Fondo"), all=TRUE)
+  #       colnames(Total) <- c("Fondo", "MontoC","MontoV")
+  #     }
+  #   }
+  #   else{
+  #     rowdatac$Monto <- substr(rowdatac$Monto, 2, 100)
+  #     rowdatac$Monto <- as.numeric(gsub(",","",rowdatac$Monto))
+  #     rowdatav$Monto <- substr(rowdatav$Monto, 2, 100)
+  #     rowdatav$Monto <- as.numeric(gsub(",","",rowdatav$Monto))
+  #     rowdatac$Titulos <- as.numeric(gsub(",","",rowdatac$Titulos)) 
+  #     rowdatav$Titulos <- as.numeric(gsub(",","",rowdatav$Titulos)) 
+  #     Totalc <- rowdatac %>% group_by(Fondo) %>% summarise(sum(Monto))
+  #     Totalv <- rowdatav %>% group_by(Fondo) %>% summarise(sum(Monto))
+  #     colnames(Totalc) <- c("Fondo", "MontoC")
+  #     colnames(Totalv) <- c("Fondo", "MontoV")
+  #     Total <- merge(Totalc,Totalv,by=c("Fondo"), all=TRUE)
+  #     colnames(Total) <- c("Fondo", "MontoC","MontoV")
+  #   }
+  #   
+  #   Total2 <- data.frame(Total$Fondo,Instrumento="TOTAL",Total$MontoC,Total$MontoV) 
+  #   colnames(Total2) <- c("Fondo","Instrumento","MontoC","MontoV")
+  #   Total2 <- merge(Total,e,by = c("Fondo"),all=TRUE)
+  #   MontoTotal <- Total2$MontoC - Total2$MontoV
+  #   EfectivoFinal <- Total2$Monto - Total2$MontoC + Total2$MontoV
+  #   Total2 <- data.frame(Total2$Fondo,MontoTotal,Total2$Monto,EfectivoFinal)
+  #   colnames(Total2) <- c("Fondo","MontoTotal","Efectivo","EfectivoFinal")
+  #   
+  #   fundv <- data.frame(Fondo=rowdatav$Fondo,Instrumento=rowdatav$Instrumento,Monto=rowdatav$Monto*-1,Titulos=rowdatav$Titulos*-1)
+  #   fundc <- rowdatac
+  #   fundn <- rbind.data.frame(fundv,fundc)
+  #   fundn <- fundn %>% group_by(Fondo, Instrumento) %>% summarise(Titulos=sum(Titulos),Monto=sum(Monto))
+  #   
+  #   dfunda$Titulos <- as.numeric(gsub(",","",dfunda$Titulos))
+  #   dfunda$Monto <- substr(dfunda$Monto, 2, 100)
+  #   dfunda$Monto <- as.numeric(gsub(",","",dfunda$Monto))
+  #   
+  #   funds <- merge(dfunda,fundn,by=c("Fondo","Instrumento"), all=TRUE)
+  #   TitulosA=round(ifelse(is.na(funds$Titulos.x)==TRUE,0,funds$Titulos.x),digits = 0)
+  #   MontoA=round(ifelse(is.na(funds$Monto.x)==TRUE,0,funds$Monto.x),digits = 2)
+  #   TitulosN=round(ifelse(is.na(funds$Titulos.y)==TRUE,0,funds$Titulos.y),digits = 0)
+  #   MontoN=round(ifelse(is.na(funds$Monto.y)==TRUE,0,funds$Monto.y),digits = 2)
+  #   funds <- data.frame(cbind(funds[,1:2],TitulosA,MontoA,TitulosN,MontoN))
+  #   colnames(funds) <- c("Fondo", "Instrumento","TitulosA","MontoA","TitulosN","MontoN")
+  #   Titulos <- round(funds$TitulosA+funds$TitulosN,digits = 0)
+  #   Monto <- round(funds$MontoA+funds$MontoN,digits = 2)
+  #   fundb <- data.frame(cbind(funds[,1:2],Titulos,Monto))
+  #   efectivo <- c()
+  #   for (x in unique(fundb$Fondo)){
+  #     indicesf <- fundb$Fondo %in% x
+  #     indicese <- fundb$Instrumento %in% "EFECTIVO"
+  #     indices <- ifelse(indicesf == TRUE, indicese,indicesf)
+  #     nuevoindice <- Total2$Fondo %in% x
+  #     montoinicial <- fundb$Monto[indices]
+  #     cond <- is.na(Total2$EfectivoFinal[nuevoindice])
+  #     montofinal <- ifelse(cond==TRUE,montoinicial,Total2$EfectivoFinal[nuevoindice])
+  #     fundb$Monto[indices] <- montofinal
+  #   }
+  #   
+  #   #Porcentajes de los fondos después de operaciones
+  #   perc <- c()
+  #   dias <- c()
+  #   for (i in seq(1,length(fundb$Fondo),1)){
+  #     #Porcentaje
+  #     indice1 <- fundb$Fondo %in% fundb$Fondo[i]
+  #     indice2 <- fundb$Instrumento %in% "TOTALES"
+  #     indices <- ifelse(indice1 == TRUE,indice2,indice1)
+  #     total <- fundb$Monto[indices]
+  #     p <- round(fundb$Monto[i]/total,digits = 2)
+  #     perc <- c(perc,p)
+  #   }
+  #   fundb$Porcentaje <- perc
+  #   
+  #   #Match del fondo con el archivo minimo
+  #   colindex <- which(colnames(minimo) == selected_fund)
+  #   #Los warnings
+  #   advert <- c()
+  #   excepciones <- c("TOTALES","EFECTIVO")
+  #   #Para fácil realización
+  #   ffondo <- fundb %>% filter(Fondo == selected_fund & !(Instrumento %in% excepciones))
+  #   #Para la liquidez
+  #   efondo <- fundb %>% filter(Fondo == selected_fund & Instrumento == "EFECTIVO")
+  #   rowindex <- which(minimo$limiteminimo == "liquidez")
+  #   
+  #   error <- ifelse(efondo$Porcentaje < minimo[rowindex,colindex],
+  #                   paste0("Liquidez por debajo del limite requerido de: ",minimo[rowindex,colindex]),
+  #                   "Liquidez OK")
+  #   
+  #   advert <- c(advert,error)
+  #   
+  #   war <- data.frame(advert)
+  #   colnames(war) <- c("Liquidez")
+  #   return(war)
+  # })
+  
+  
  output$ventav <- renderTable({dfv()})
  output$comprac <- renderTable({dfc()})
   
  options(DT.options = list(pageLength = 100))
  output$funda = DT::renderDataTable({subset(dfunda,Fondo %in% input$show_vars)},rownames=FALSE)
  output$fundd = DT::renderDataTable({subset(dffund(),Fondo %in% input$show_vars)},rownames=FALSE)
- #output$inda = DT::renderDataTable({medidas})
  output$indd = DT::renderDataTable({dfindd()})
  output$inddx=renderPrint(input$indd_rows_selected)
+ output$warn = DT::renderDataTable({warnings()})
 }
