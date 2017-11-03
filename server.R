@@ -194,26 +194,20 @@ function(input, output, session) {
   #Bloqueo de titulos o monto
   observe({
     montoventa <- input$montov
-    montoventa <- ifelse(is.na(montoventa)==TRUE,0,montoventa)
     montocompra <- input$montog
-    montocompra <- ifelse(is.na(montocompra)==TRUE,0,montocompra)
     titulosventa <- input$titulosv
-    titulosventa <- ifelse(is.na(titulosventa)==TRUE,0,titulosventa)
     tituloscompra <- input$titulosg
+    
+    montoventa <- ifelse(is.na(montoventa)==TRUE,0,montoventa)
+    montocompra <- ifelse(is.na(montocompra)==TRUE,0,montocompra)
+    titulosventa <- ifelse(is.na(titulosventa)==TRUE,0,titulosventa)
     tituloscompra <- ifelse(is.na(tituloscompra)==TRUE,0,tituloscompra)
     
-    if(montoventa != 0){
-      updateNumericInput(session,"titulosv",value = 0)
-    }
-    if(titulosventa != 0){
-      updateNumericInput(session,"montov",value = 0)
-    }
-    if(montocompra != 0){
-      updateNumericInput(session,"titulosg",value = 0)
-    }
-    if(tituloscompra != 0){
-      updateNumericInput(session,"montog",value = 0)
-    }
+    if(montoventa != 0){updateNumericInput(session,"titulosv",value = 0)}
+    if(titulosventa != 0){updateNumericInput(session,"montov",value = 0)}
+    if(montocompra != 0){updateNumericInput(session,"titulosg",value = 0)}
+    if(tituloscompra != 0){updateNumericInput(session,"montog",value = 0)}
+    
     shinyjs::onclick("montov",shinyjs::disable("titulosv") & shinyjs::enable("montov"))
     shinyjs::onclick("titulosv",shinyjs::disable("montov") & shinyjs::enable("titulosv"))
     shinyjs::onclick("montog",shinyjs::disable("titulosg") & shinyjs::enable("montog"))
