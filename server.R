@@ -835,6 +835,16 @@ function(input, output, session) {
                     " ")
     advert <- c(advert,error)
     
+    #Para los ETF's
+    rowindex <- which(maximo$limitemaximo == "etfs")
+    indicesetf <- funddb$TV %in% mercados$etf
+    etf <- sum(funddb$Porcentaje[indicesetf])
+    error <- ifelse(etf > as.numeric(maximo[rowindex,colindexm]),
+                    paste0("Porcentaje en ETF's por encima del limite requerido de: ",
+                           maximo[rowindex,colindexm]),
+                    " ")
+    advert <- c(advert,error)
+    
     #Para la duración
     if(selected_fund %in% fondoss){
       rowindex <- which(minimo$limiteminimo == "duracion")
