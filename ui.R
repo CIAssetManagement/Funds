@@ -10,6 +10,7 @@ estilo <- "width: 90%; height:90%; position:relative; right:170px"
 estilor <- "width: 103%; position:relative; right:170px"
 estilo1 <- "width: 100%; height:90%; position:relative; right:100px"
 estilor1 <- "width: 103%; position:relative; right:100px"
+estilow <- "position:relative; right:100px"
 
 fluidPage(
   useShinyjs(),
@@ -65,12 +66,14 @@ fluidPage(
     #h4('PRUEBA TOTAL',style="margin:80px 0 0 0;"),
     #div(style="align:left; position:relative; top:20px;",tableOutput('prueba'))),
   
-  fluidRow(
-    div(DT::dataTableOutput("warn")),
-  
+
   fluidRow(
     div(checkboxGroupInput("show_vars","Selecciona el Fondo:",namesfondos,namesfondos,inline=TRUE,width="100%"),
         style=paste0("color: #fefefe; ",estilo)),
+    fluidRow(column(7,h2("Warnings",style = paste0("font-family: 'Roboto Slab', serif;
+                 font-weight: 500; line-height: 1.1; color: #fefefe; ")),
+                    hr(style=estilow),
+                    div(DT::dataTableOutput("warn"),style=estilow)),
     column(4,h2("Fondos",style = paste0("font-family: 'Roboto Slab', serif;
                  font-weight: 500; line-height: 1.1; color: #fefefe; ",estilo)),
            hr(style=estilor),
@@ -87,8 +90,7 @@ fluidPage(
     h2("Medidas de Riesgo Simulación",style = paste0("font-family: 'Roboto Slab', serif;
                  font-weight: 500; line-height: 1.1;color: #fefefe; ",estilo1)),
     hr(style=estilor1),
-    div(DT::dataTableOutput("indd"),style=estilo1)))
-  )
+    div(DT::dataTableOutput("indd"),style=estilo1))))
   )
 )
 

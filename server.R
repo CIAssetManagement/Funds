@@ -13,7 +13,7 @@ library(shinyjs)
 options(scipen = 999)
 
 #Instrumentos
-instrumentos <- read.csv("//192.168.0.223/CIFONDOS/Instrumentos.csv",header=TRUE,stringsAsFactors = FALSE)
+info_diaria <- read.csv("//192.168.0.223/CIFONDOS/Instrumentos.csv",header=TRUE,stringsAsFactors = FALSE)
 #Fondos
 fondos <- read_excel("//192.168.0.223/CIFONDOS/Fondos.xlsx")
 colnames(fondos) <- c("I","Fondo","TV","Emisora","Serie","Títulos","Costo.Total")
@@ -97,25 +97,30 @@ instrumentoventa <- function(fondo,tv,emisora){
 #Lista de instrumentos que los fondos pueden comprar.
 tipovalorcompra <- function(nombre){
   
-  cigub <- instrumentos$TipoValor %in% mercados$cigub
-  cigump <- instrumentos$TipoValor %in% mercados$cigump
-  cigulp <- instrumentos$TipoValor %in% mercados$cigulp
-  ciplus <- instrumentos$TipoValor %in% mercados$ciplus
-  cibols <- instrumentos$TipoValor %in% mercados$cibols
-  ciequs <- instrumentos$TipoValor %in% mercados$ciequs
-  ciusd <- instrumentos$TipoValor %in% mercados$ciusd
+  cigub <- info_diaria$TipoValor %in% mercados$cigub
+  cigump <- info_diaria$TipoValor %in% mercados$cigump
+  cigulp <- info_diaria$TipoValor %in% mercados$cigulp
+  ciplus <- info_diaria$TipoValor %in% mercados$ciplus
+  cibols <- info_diaria$TipoValor %in% mercados$cibols
+  ciequs <- info_diaria$TipoValor %in% mercados$ciequs
+  ciusd <- info_diaria$TipoValor %in% mercados$ciusd
   
   valores <- switch(nombre,
-                    "+CIGUB"={instrumentos$TipoValor[cigub]},
-                    "+CIGUMP"={instrumentos$TipoValor[cigump]},
-                    "+CIGULP"={instrumentos$TipoValor[cigulp]},
-                    "+CIPLUS"={instrumentos$TipoValor[ciplus]},
-                    "+CIBOLS"={instrumentos$TipoValor[cibols]},
-                    "+CIUSD"={instrumentos$TipoValor[ciusd]},
-                    "+CIEQUS"={instrumentos$TipoValor[ciequs]}
+                    "+CIGUB"={info_diaria$TipoValor[cigub]},
+                    "+CIGUMP"={info_diaria$TipoValor[cigump]},
+                    "+CIGULP"={info_diaria$TipoValor[cigulp]},
+                    "+CIPLUS"={info_diaria$TipoValor[ciplus]},
+                    "+CIBOLS"={info_diaria$TipoValor[cibols]},
+                    "+CIUSD"={info_diaria$TipoValor[ciusd]},
+                    "+CIEQUS"={info_diaria$TipoValor[ciequs]}
   )
   
   valores <- sort(na.omit(unique(valores)))
+  if(nombre=="+CIPLUS"){
+    valor <- valores[2]
+    valores[2] <- valores[1]
+    valores[1] <- valor
+  }
   return(valores)
 }
 
@@ -123,11 +128,11 @@ emisoracompra <- function(nombre,tv){
   #Posibles instrumentos
   calificacion <- calificaciones(nombre,tv)
   #Double match
-  indicei <- instrumentos$TipoValor %in% tv
-  indicec <- instrumentos$Calificacion %in% calificacion
+  indicei <- info_diaria$TipoValor %in% tv
+  indicec <- info_diaria$Calificacion %in% calificacion
   indices <- ifelse(indicei==TRUE,indicec,indicei)
   #Instrumentos
-  instrumento <- sort(instrumentos$Emisora[indices])
+  instrumento <- sort(info_diaria$Emisora[indices])
   
   return(instrumento)
 }
@@ -136,13 +141,13 @@ instrumentocompra <- function(nombre,tv,emisora){
   #Posibles instrumentos
   calificacion <- calificaciones(nombre,tv)
   #Triple match
-  indicet <- instrumentos$TipoValor %in% tv
-  indicee <- instrumentos$Emisora %in% emisora
-  indicec <- instrumentos$Calificacion %in% calificacion
+  indicet <- info_diaria$TipoValor %in% tv
+  indicee <- info_diaria$Emisora %in% emisora
+  indicec <- info_diaria$Calificacion %in% calificacion
   indicete <- ifelse(indicet == TRUE,indicee,indicet)
   indices <- ifelse(indicete == TRUE,indicec,indicete)
   #Instrumentos
-  instrumento <- sort(instrumentos$id[indices])
+  instrumento <- sort(info_diaria$id[indices])
   return(instrumento)
 }
 
@@ -192,7 +197,7 @@ function(input, output, session) {
   })
   
   #Bloqueo de titulos o monto
-  observe({
+  reactive({
     montoventa <- input$montov
     montocompra <- input$montog
     titulosventa <- input$titulosv
@@ -315,11 +320,16 @@ function(input, output, session) {
     pesos <- fondo$Porcentaje[indicesa]
     titulos <- fondo$Titulos[indicesa]
     
+    indicese <- dfunda$Fondo %in% selected_fund
+    indicese2 <- dfunda$Instrumento %in% "EFECTIVO"
+    indexe <- ifelse(indicese == TRUE, indicese2,indicese)
+    cash <- dfunda$Monto[indexe]
+    
     if (selected_fund %in% fondos){
       
       durant <- round(PortfolioDuration(diah(Sys.Date()-1),instrumentos,pesos)*360,digits=0)
       convexant <- round(PortfolioConvexity(diah(Sys.Date()-1),instrumentos,pesos),digits=0) 
-      valueant <- RiskValues(instrumentos,titulos)
+      valueant <- RiskValues(instrumentos,titulos,cash)
       varant <- paste0(round(valueant$VaR*100,digits=2),"%")
       cvarant <- paste0(round(valueant$CVaR*100,digits=2),"%")
       metrics <- data.frame(t(c(Fondo=selected_fund,Duracion=durant,Convexidad=convexant,VaR=varant,CVaR=cvarant)))
@@ -327,7 +337,7 @@ function(input, output, session) {
       
     } else {
       
-      valueant <- RiskValues(instrumentos,titulos)
+      valueant <- RiskValues(instrumentos,titulos,cash)
       varant <- paste0(round(valueant$VaR*100,digits=2),"%")
       cvarant <- paste0(round(valueant$CVaR*100,digits=2),"%")
       metrics <- data.frame(t(c(Fondo=selected_fund)))
@@ -444,18 +454,23 @@ function(input, output, session) {
     pesos <- fondo$Porcentaje[indicesa]
     titulos <- fondo$Titulos[indicesa]
     
+    indicese <- fundb$Fondo %in% selected_fund
+    indicese2 <- fundb$Instrumento %in% "EFECTIVO"
+    indexe <- ifelse(indicese == TRUE, indicese2,indicese)
+    cash <- fundb$Monto[indexe]
+    
     if (selected_fund %in% fondoss){
       
       durdes <- round(PortfolioDuration(diah(Sys.Date()-1),instrumentos,pesos)*360,digits=0)
       convexdes <- round(PortfolioConvexity(diah(Sys.Date()-1),instrumentos,pesos),digits=0)
-      valuesdes <- RiskValues(instrumentos,titulos)
+      valuesdes <- RiskValues(instrumentos,titulos, cash)
       vardes <- paste0(round(valuesdes$VaR*100,digits=2),"%")
       cvardes <- paste0(round(valuesdes$CVaR*100,digits=2),"%")
       metricsd <- data.frame(t(c(Fondo=selected_fund,Duracion=durdes,Convexidad=convexdes,VaR=vardes,CVaR=cvardes)))
       
     } else {
       
-      valuedes <- RiskValues(instrumentos,titulos)
+      valuedes <- RiskValues(instrumentos,titulos,cash)
       vardes <- paste0(round(valuedes$VaR*100,digits=2),"%")
       cvardes <- paste0(round(valuedes$CVaR*100,digits=2),"%")
       metricsd <- data.frame(t(c(Fondo=selected_fund,VaR=vardes,CVaR=cvardes)))
@@ -602,11 +617,10 @@ function(input, output, session) {
     error <- ifelse(Total2$EfectivoFinal<0,TRUE,FALSE)
     fond <- Total2$Fondo[error]
     fond <- paste(fond[!is.na(fond)],collapse=",")
-    #Vendiste de más
+    #Vendiste de mas
     error2 <- c()
     for (i in seq(1,length(dfunda$Instrumento),1)){
-      indice <- match(fundn$Instrumento,dfunda$Instrumento[i])
-      indice <- indice[!is.na(indice)]
+      indice <- which(fundn$Instrumento==dfunda$Instrumento[i])
       if(length(indice) > 0){
         if(dfunda$Monto[i] + fundn$Monto[indice] < 0){
           error2 <- c(error2,TRUE)
@@ -760,24 +774,15 @@ function(input, output, session) {
       perc <- c(perc,p)
     }
     fundb$Porcentaje <- perc
-    
-    
+
+
     #Match del fondo con el archivo minimo
     colindex <- which(colnames(minimo) == selected_fund)
     colindexm <- which(colnames(maximo) == selected_fund)
     #Los warnings
     fondoss <- c("+CIGUB","+CIGUMP","+CIGULP","+CIPLUS")
-    advert <- c()
-    
-    #Para la liquidez
-    efondo <- fundb %>% filter(Fondo == selected_fund & Instrumento == "EFECTIVO")
-    rowindex <- which(minimo$limiteminimo == "liquidez")
-    
-    error <- ifelse(efondo$Porcentaje < as.numeric(minimo[rowindex,colindex]),
-                    paste0("Liquidez por debajo del limite requerido de: ",minimo[rowindex,colindex]),
-                    " ")
-    advert <- c(advert,error)
-    
+    advert <- c(" ")
+
     #Para chequeras, sic, fácil realización y deuda en pesos.
     excepciones <- c("TOTALES","EFECTIVO")
     f <- c()
@@ -787,12 +792,16 @@ function(input, output, session) {
       f <- c(f,valor)
     }
     funddb$TV <- as.character(f)
-    
+
     #Insumos para VaR y Duracion
-    pesos <- funddb$Porcentaje
     instrumentos <- funddb$Instrumento
     titulos <- funddb$Titulos
-    
+
+    indicese <- fundb$Fondo %in% selected_fund
+    indicese2 <- fundb$Instrumento %in% "EFECTIVO"
+    indexe <- ifelse(indicese == TRUE, indicese2,indicese)
+    cash <- fundb$Monto[indexe]
+
     #Para fácil realización
     rowindex <- which(minimo$limiteminimo == "facilrealizacion")
     indicesfr <- funddb$TV %in% mercados$facilrealizacion
@@ -807,87 +816,122 @@ function(input, output, session) {
     else
       facilr <- sum(funddb$Porcentaje[indicesfr],fundb$Porcentaje[indicesfr4])
     error <- ifelse(facilr < as.numeric(minimo[rowindex,colindex]),
-                    paste0("Porcentaje de fácil realización por debajo del limite requerido de: ",
-                           minimo[rowindex,colindex]),
-                    " ")
+                    paste0("Porcentaje de fácil realización por debajo del límite requerido de: ",
+                           minimo[rowindex,colindex]),NA)
     advert <- c(advert,error)
-    
+
+    #Para los valores gubernamentales en México
+    rowindex <- which(minimo$limiteminimo == "gubernacional")
+    indicesgn <- funddb$TV %in% mercados$gubernacional
+    gn <- sum(funddb$Porcentaje[indicesgn])
+    error <- ifelse(gn < as.numeric(minimo[rowindex,colindex]),
+                    paste0("Porcentaje en chequera por debajo del límite requerido de: ",
+                           minimo[rowindex,colindex]),NA)
+    advert <- c(advert,error)
+
+    #Para los valores gubernamentales en el extranjero
+    rowindex <- which(maximo$limitemaximo == "guberinternacional")
+    indicesgi <- funddb$TV %in% mercados$guberinternacional
+    gi <- sum(funddb$Porcentaje[indicesgi])
+    error <- ifelse(gi < as.numeric(minimo[rowindex,colindex]),
+                    paste0("Porcentaje en chequera por debajo del límite requerido de: ",
+                           minimo[rowindex,colindex]),NA)
+    advert <- c(advert,error)
+
     #Para las chequeras
     rowindex <- which(minimo$limiteminimo == "chd")
     indicesch <- funddb$TV %in% "CHD"
     chd <- sum(funddb$Porcentaje[indicesch])
     error <- ifelse(chd < as.numeric(minimo[rowindex,colindex]),
-                     paste0("Porcentaje en chequera por debajo del limite requerido de: ",
-                            minimo[rowindex,colindex]),
-                     " ")
+                     paste0("Porcentaje en chequera por debajo del límite requerido de: ",
+                            minimo[rowindex,colindex]),NA)
     advert <- c(advert,error)
-    
+
     #Para el SIC
     rowindex <- which(minimo$limiteminimo == "sic")
     indicessic <- funddb$TV %in% mercados$sic
     sic <- sum(funddb$Porcentaje[indicessic])
     error <- ifelse(sic < as.numeric(minimo[rowindex,colindex]),
-                    paste0("Porcentaje en SIC por debajo del limite requerido de: ",
-                           minimo[rowindex,colindex]),
-                    " ")
+                    paste0("Porcentaje en SIC por debajo del límite requerido de: ",
+                           minimo[rowindex,colindex]),NA)
     advert <- c(advert,error)
-    
+
     #Para la deuda en pesos
     rowindex <- which(minimo$limiteminimo == "deudamxn")
     indicesdmxn <- funddb$TV %in% mercados$deudamxn
     deudamxn <- sum(funddb$Porcentaje[indicesdmxn])
-    error <- ifelse(sic < as.numeric(minimo[rowindex,colindex]),
-                    paste0("Porcentaje de deuda en pesos por debajo del limite requerido de: ",
-                           minimo[rowindex,colindex]),
-                    " ")
+    error <- ifelse(deudamxn < as.numeric(minimo[rowindex,colindex]),
+                    paste0("Porcentaje de deuda en pesos por debajo del límite requerido de: ",
+                           minimo[rowindex,colindex]),NA)
     advert <- c(advert,error)
-    
+
     #Para las FIBRAS
     rowindex <- which(maximo$limitemaximo == "fibras")
     indicesfib <- funddb$TV %in% mercados$fibras
     fibras <- sum(funddb$Porcentaje[indicesfib])
     error <- ifelse(fibras > as.numeric(maximo[rowindex,colindexm]),
-                    paste0("Porcentaje en FIBRAS por encima del limite requerido de: ",
-                           maximo[rowindex,colindexm]),
-                    " ")
+                    paste0("Porcentaje en FIBRAS por encima del límite requerido de: ",
+                           maximo[rowindex,colindexm]),NA)
     advert <- c(advert,error)
-    
+
     #Para los ETF's
     rowindex <- which(maximo$limitemaximo == "etfs")
     indicesetf <- funddb$TV %in% mercados$etf
     etf <- sum(funddb$Porcentaje[indicesetf])
     error <- ifelse(etf > as.numeric(maximo[rowindex,colindexm]),
-                    paste0("Porcentaje en ETF's por encima del limite requerido de: ",
-                           maximo[rowindex,colindexm]),
-                    " ")
+                    paste0("Porcentaje en ETF's por encima del límite requerido de: ",
+                           maximo[rowindex,colindexm]),NA)
     advert <- c(advert,error)
-    
+
     #Para la duración
     if(selected_fund %in% fondoss){
       rowindex <- which(minimo$limiteminimo == "duracion")
-      duracion <- round(PortfolioDuration(diah(Sys.Date()-1),instrumentos,pesos)*360,digits=0)
+      indicesinst <- funddb$TV %in% mercados$deudamxn
+      inst <- funddb$Instrumento[indicesinst]
+      pes <- funddb$Porcentaje[indicesinst]
+      duracion <- round(PortfolioDuration(diah(Sys.Date()-1),inst,pes)*360,digits=0)
       error <- ifelse(duracion < as.numeric(minimo[rowindex,colindex]),
-                      paste0("Duración por debajo del limite requerido de: ",
-                             minimo[rowindex,colindex]),
-                      " ")
+                      paste0("Duración por debajo del límite requerido de: ",
+                             minimo[rowindex,colindex]),NA)
       advert <- c(advert,error)
       rowindex <- which(maximo$limitemaximo == "duracion")
       error <- ifelse(duracion > as.numeric(maximo[rowindex,colindexm]),
-                      paste0("Duración por encima del limite requerido de: ",
-                             maximo[rowindex,colindexm]),
-                      " ")
+                      paste0("Duración por encima del límite requerido de: ",
+                             maximo[rowindex,colindexm]),NA)
       advert <- c(advert,error)
     }
-    
+
     #Para el VaR
     rowindex <- which(maximo$limitemaximo == "var")
-    var <- RiskValues(instrumentos,titulos)
-    error <- ifelse(var > as.numeric(maximo[rowindex,colindexm]),
-                    paste0("VaR por encima del limite requerido de: ",
-                           maximo[rowindex,colindexm]),
-                    " ")
+    var <- RiskValues(instrumentos,titulos,cash)$VaR
+    error <- ifelse(var < as.numeric(maximo[rowindex,colindexm]),
+                    paste0("VaR superior al límite requerido de: ",
+                           round(maximo[rowindex,colindexm]*100,digits=2),"%"),NA)
     advert <- c(advert,error)
-    
+
+    #Para las calificaciones
+    rowindex <- which(minimo$limiteminimo == "calificacion")
+    nindices <- funddb$TV %in% mercados$aplicarcalificacion
+    if(TRUE %in% nindices){
+      inst <- funddb$Instrumento[nindices]
+      percentage <- funddb$Porcentaje[nindices] 
+      grade <- c()
+      calif <- c()
+      for (x in inst){
+        indicesss <- info_diaria$id %in% x
+        grade <- info_diaria$Calificacion[indicesss]
+        calif <- c(calif,as.numeric(Grade2Number(grade)$Valor))
+      }
+      calificacion <- sum(percentage*calif)/sum(percentage)
+      
+      error <- ifelse(calificacion < as.numeric(Grade2Number(minimo[rowindex,colindexm])$Valor),
+                      paste0("Calificación promedio inferior al límite requerido de: ",
+                             minimo[rowindex,colindexm]),NA)
+      advert <- c(advert,error)
+    }
+
+    advert <- advert[is.na(advert)==FALSE]
+
     war <- data.frame(Fondo=selected_fund,Warnings=advert)
     return(war)
   })
