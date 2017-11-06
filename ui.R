@@ -62,16 +62,14 @@ fluidPage(
     h4('Compra de Instrumentos',style="margin:50px 0 0 0;"),
     div(style="align:left; position:relative; top:20px;",tableOutput('comprac')),
     actionButton("summit","Cargar")),
-    #actionButton("limpiar", "Limpiar"),
-    #h4('PRUEBA TOTAL',style="margin:80px 0 0 0;"),
-    #div(style="align:left; position:relative; top:20px;",tableOutput('prueba'))),
   
 
   fluidRow(
     div(checkboxGroupInput("show_vars","Selecciona el Fondo:",namesfondos,namesfondos,inline=TRUE,width="100%"),
         style=paste0("color: #fefefe; ",estilo)),
+    
     fluidRow(column(7,h2("Warnings",style = paste0("font-family: 'Roboto Slab', serif;
-                 font-weight: 500; line-height: 1.1; color: #fefefe; ")),
+                 font-weight: 500; line-height: 1.1; color: #fefefe; ",estilow)),
                     hr(style=estilow),
                     div(DT::dataTableOutput("warn"),style=estilow)),
     column(4,h2("Fondos",style = paste0("font-family: 'Roboto Slab', serif;
@@ -82,8 +80,9 @@ fluidPage(
                  font-weight: 500; line-height: 1.1;color: #fefefe; ",estilo)),
     hr(style=estilor),
     div(DT::dataTableOutput("inda"),style=estilo)),
+    
   fluidRow(
-    column(4,h2("Fondos Operaciones",style = paste0("font-family: 'Roboto Slab', serif;
+    column(3,h2("Fondos Operaciones",style = paste0("font-family: 'Roboto Slab', serif;
                  font-weight: 500; line-height: 1.1; color: #fefefe; ",estilo1)),
            hr(style=estilor1),
     div(DT::dataTableOutput("fundd"), style=estilo1),
