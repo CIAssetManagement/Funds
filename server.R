@@ -329,7 +329,7 @@ function(input, output, session) {
       
       durant <- round(PortfolioDuration(diah(Sys.Date()-1),instrumentos,pesos)*360,digits=0)
       convexant <- round(PortfolioConvexity(diah(Sys.Date()-1),instrumentos,pesos),digits=0) 
-      valueant <- RiskValues(instrumentos,titulos,cash)
+      valueant <- abs(RiskValues(instrumentos,titulos,cash))
       varant <- paste0(round(valueant$VaR*100,digits=2),"%")
       cvarant <- paste0(round(valueant$CVaR*100,digits=2),"%")
       metrics <- data.frame(t(c(Fondo=selected_fund,Duracion=durant,Convexidad=convexant,VaR=varant,CVaR=cvarant)))
@@ -337,7 +337,7 @@ function(input, output, session) {
       
     } else {
       
-      valueant <- RiskValues(instrumentos,titulos,cash)
+      valueant <- abs(RiskValues(instrumentos,titulos,cash))
       varant <- paste0(round(valueant$VaR*100,digits=2),"%")
       cvarant <- paste0(round(valueant$CVaR*100,digits=2),"%")
       metrics <- data.frame(t(c(Fondo=selected_fund)))
@@ -463,14 +463,14 @@ function(input, output, session) {
       
       durdes <- round(PortfolioDuration(diah(Sys.Date()-1),instrumentos,pesos)*360,digits=0)
       convexdes <- round(PortfolioConvexity(diah(Sys.Date()-1),instrumentos,pesos),digits=0)
-      valuesdes <- RiskValues(instrumentos,titulos, cash)
+      valuesdes <- abs(RiskValues(instrumentos,titulos, cash))
       vardes <- paste0(round(valuesdes$VaR*100,digits=2),"%")
       cvardes <- paste0(round(valuesdes$CVaR*100,digits=2),"%")
       metricsd <- data.frame(t(c(Fondo=selected_fund,Duracion=durdes,Convexidad=convexdes,VaR=vardes,CVaR=cvardes)))
       
     } else {
       
-      valuedes <- RiskValues(instrumentos,titulos,cash)
+      valuedes <- abs(RiskValues(instrumentos,titulos,cash))
       vardes <- paste0(round(valuedes$VaR*100,digits=2),"%")
       cvardes <- paste0(round(valuedes$CVaR*100,digits=2),"%")
       metricsd <- data.frame(t(c(Fondo=selected_fund,VaR=vardes,CVaR=cvardes)))
@@ -905,8 +905,8 @@ function(input, output, session) {
       
     #Para el VaR
     rowindex <- which(maximo$limitemaximo == "var")
-    valuea <- RiskValues(instrumentos,titulos,cash)$VaR
-    error <- ifelse(valuea < as.numeric(maximo[rowindex,colindex]),
+    valuea <- abs(RiskValues(instrumentos,titulos,cash)$VaR)
+    error <- ifelse(valuea > as.numeric(maximo[rowindex,colindex]),
                     paste0("VaR superior al límite requerido de: ",
                            round(maximo[rowindex,colindex]*100,digits=2),"%"),NA)
     advert <- c(advert,error)
