@@ -65,7 +65,7 @@ fluidPage(
   
 
   fluidRow(
-    div(checkboxGroupInput("show_vars","Selecciona el Fondo:",namesfondos,namesfondos,inline=TRUE,width="100%"),
+    div(checkboxGroupInput("show_vars","Selecciona el Fondo:",namesfondos,namesfondos[1],inline=TRUE,width="100%"),
         style=paste0("color: #fefefe; ",estilo)),
     
     fluidRow(column(7,h2("Warnings",style = paste0("font-family: 'Roboto Slab', serif;

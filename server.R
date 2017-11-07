@@ -197,7 +197,7 @@ function(input, output, session) {
   })
   
   #Bloqueo de titulos o monto
-  reactive({
+  observe({
     montoventa <- input$montov
     montocompra <- input$montog
     titulosventa <- input$titulosv
@@ -619,10 +619,11 @@ function(input, output, session) {
     fond <- paste(fond[!is.na(fond)],collapse=",")
     #Vendiste de mas
     error2 <- c()
-    for (i in seq(1,length(dfunda$Instrumento),1)){
-      indice <- which(fundn$Instrumento==dfunda$Instrumento[i])
+    ddfunda <- dfunda %>% filter(Fondo == input$fondo)
+    for (i in seq(1,length(ddfunda$Instrumento),1)){
+      indice <- which(fundn$Instrumento==ddfunda$Instrumento[i])
       if(length(indice) > 0){
-        if(dfunda$Monto[i] + fundn$Monto[indice] < 0){
+        if(ddfunda$Monto[i] + sum(fundn$Monto[indice]) < 0){
           error2 <- c(error2,TRUE)
         } else {
           error2 <- c(error2,FALSE)
@@ -631,7 +632,7 @@ function(input, output, session) {
         error2 <- c(error2,FALSE)
       }
     }
-    fond2 <- dfunda$Instrumento[error2]
+    fond2 <- ddfunda$Instrumento[error2]
     fond2 <- paste(fond2[!is.na(fond2)],collapse=",")
     if(TRUE %in% error){
       showModal(modalDialog(title = "ERROR",paste0("No hay suficiente efectivo para realizar la operacion ",
@@ -778,21 +779,21 @@ function(input, output, session) {
 
     #Match del fondo con el archivo minimo
     colindex <- which(colnames(minimo) == selected_fund)
-    colindexm <- which(colnames(maximo) == selected_fund)
     #Los warnings
     fondoss <- c("+CIGUB","+CIGUMP","+CIGULP","+CIPLUS")
-    advert <- c(" ")
 
     #Para chequeras, sic, fácil realización y deuda en pesos.
     excepciones <- c("TOTALES","EFECTIVO")
     f <- c()
     funddb <- fundb %>% filter(Fondo == selected_fund & !(Instrumento %in% excepciones))
+    advert <- c(" ")
+    
     for (x in funddb$Instrumento){
       valor <- strsplit(x,"-")[[1]][1]
       f <- c(f,valor)
     }
     funddb$TV <- as.character(f)
-
+    
     #Insumos para VaR y Duracion
     instrumentos <- funddb$Instrumento
     titulos <- funddb$Titulos
@@ -823,9 +824,9 @@ function(input, output, session) {
     #Para los valores gubernamentales en México
     rowindex <- which(minimo$limiteminimo == "gubernacional")
     indicesgn <- funddb$TV %in% mercados$gubernacional
-    gn <- sum(funddb$Porcentaje[indicesgn])
+    gn <- sum(funddb$Porcentaje[indicesgn],funddb$Porcentaje[indexe])
     error <- ifelse(gn < as.numeric(minimo[rowindex,colindex]),
-                    paste0("Porcentaje en chequera por debajo del límite requerido de: ",
+                    paste0("Porcentaje en valores gubernamentales nacionales por debajo del límite requerido de: ",
                            minimo[rowindex,colindex]),NA)
     advert <- c(advert,error)
 
@@ -834,18 +835,21 @@ function(input, output, session) {
     indicesgi <- funddb$TV %in% mercados$guberinternacional
     gi <- sum(funddb$Porcentaje[indicesgi])
     error <- ifelse(gi < as.numeric(minimo[rowindex,colindex]),
-                    paste0("Porcentaje en chequera por debajo del límite requerido de: ",
+                    paste0("Porcentaje en valores gubernamentales en el extranjero por encima del 
+                           límite requerido de: ",
                            minimo[rowindex,colindex]),NA)
     advert <- c(advert,error)
 
     #Para las chequeras
-    rowindex <- which(minimo$limiteminimo == "chd")
-    indicesch <- funddb$TV %in% "CHD"
-    chd <- sum(funddb$Porcentaje[indicesch])
-    error <- ifelse(chd < as.numeric(minimo[rowindex,colindex]),
-                     paste0("Porcentaje en chequera por debajo del límite requerido de: ",
-                            minimo[rowindex,colindex]),NA)
-    advert <- c(advert,error)
+    if(selected_fund == "+CIUSD"){
+      rowindex <- which(minimo$limiteminimo == "chd")
+      indicesch <- funddb$TV %in% "CHD"
+      chd <- sum(funddb$Porcentaje[indicesch])
+      error <- ifelse(chd < as.numeric(minimo[rowindex,colindex]),
+                      paste0("Porcentaje en chequera por debajo del límite requerido de: ",
+                             minimo[rowindex,colindex]),NA)
+      advert <- c(advert,error) 
+    }
 
     #Para el SIC
     rowindex <- which(minimo$limiteminimo == "sic")
@@ -869,44 +873,42 @@ function(input, output, session) {
     rowindex <- which(maximo$limitemaximo == "fibras")
     indicesfib <- funddb$TV %in% mercados$fibras
     fibras <- sum(funddb$Porcentaje[indicesfib])
-    error <- ifelse(fibras > as.numeric(maximo[rowindex,colindexm]),
+    error <- ifelse(fibras > as.numeric(maximo[rowindex,colindex]),
                     paste0("Porcentaje en FIBRAS por encima del límite requerido de: ",
-                           maximo[rowindex,colindexm]),NA)
+                           maximo[rowindex,colindex]),NA)
     advert <- c(advert,error)
 
     #Para los ETF's
     rowindex <- which(maximo$limitemaximo == "etfs")
     indicesetf <- funddb$TV %in% mercados$etf
     etf <- sum(funddb$Porcentaje[indicesetf])
-    error <- ifelse(etf > as.numeric(maximo[rowindex,colindexm]),
+    error <- ifelse(etf > as.numeric(maximo[rowindex,colindex]),
                     paste0("Porcentaje en ETF's por encima del límite requerido de: ",
-                           maximo[rowindex,colindexm]),NA)
+                           maximo[rowindex,colindex]),NA)
     advert <- c(advert,error)
 
     #Para la duración
     if(selected_fund %in% fondoss){
       rowindex <- which(minimo$limiteminimo == "duracion")
-      indicesinst <- funddb$TV %in% mercados$deudamxn
-      inst <- funddb$Instrumento[indicesinst]
-      pes <- funddb$Porcentaje[indicesinst]
+      inst <- funddb$Instrumento
+      pes <- funddb$Porcentaje
       duracion <- round(PortfolioDuration(diah(Sys.Date()-1),inst,pes)*360,digits=0)
-      error <- ifelse(duracion < as.numeric(minimo[rowindex,colindex]),
-                      paste0("Duración por debajo del límite requerido de: ",
-                             minimo[rowindex,colindex]),NA)
-      advert <- c(advert,error)
-      rowindex <- which(maximo$limitemaximo == "duracion")
-      error <- ifelse(duracion > as.numeric(maximo[rowindex,colindexm]),
-                      paste0("Duración por encima del límite requerido de: ",
-                             maximo[rowindex,colindexm]),NA)
-      advert <- c(advert,error)
+      if(duracion < as.numeric(minimo[rowindex,colindex])){
+        error <- paste0("Duración por debajo del límite requerido de: ",minimo[rowindex,colindex])
+        advert <- c(advert,error)
+      }
+      if(duracion > as.numeric(maximo[rowindex,colindex])){
+        error <- paste0("Duración por encima del límite requerido de: ", maximo[rowindex,colindex])
+        advert <- c(advert,error)
+      }
     }
-
+      
     #Para el VaR
     rowindex <- which(maximo$limitemaximo == "var")
-    var <- RiskValues(instrumentos,titulos,cash)$VaR
-    error <- ifelse(var < as.numeric(maximo[rowindex,colindexm]),
+    valuea <- RiskValues(instrumentos,titulos,cash)$VaR
+    error <- ifelse(valuea < as.numeric(maximo[rowindex,colindex]),
                     paste0("VaR superior al límite requerido de: ",
-                           round(maximo[rowindex,colindexm]*100,digits=2),"%"),NA)
+                           round(maximo[rowindex,colindex]*100,digits=2),"%"),NA)
     advert <- c(advert,error)
 
     #Para las calificaciones
@@ -924,9 +926,9 @@ function(input, output, session) {
       }
       calificacion <- sum(percentage*calif)/sum(percentage)
       
-      error <- ifelse(calificacion < as.numeric(Grade2Number(minimo[rowindex,colindexm])$Valor),
+      error <- ifelse(calificacion < as.numeric(Grade2Number(minimo[rowindex,colindex])$Valor),
                       paste0("Calificación promedio inferior al límite requerido de: ",
-                             minimo[rowindex,colindexm]),NA)
+                             minimo[rowindex,colindex]),NA)
       advert <- c(advert,error)
     }
 
