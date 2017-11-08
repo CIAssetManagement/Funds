@@ -765,6 +765,7 @@ function(input, output, session) {
 
     #Porcentajes de los fondos después de operaciones
     perc <- c()
+    dias <- c()
     for (i in seq(1,length(fundb$Fondo),1)){
       #Porcentaje
       indice1 <- fundb$Fondo %in% fundb$Fondo[i]
@@ -773,8 +774,18 @@ function(input, output, session) {
       total <- fundb$Monto[indices]
       p <- round(fundb$Monto[i]/total,digits = 2)
       perc <- c(perc,p)
+      #Dias por vencer
+      bono <- get_bonds(fundb$Instrumento[i])
+      if(is.na(bono[1,1])==TRUE){
+        d <- '-'
+      } else {
+        vencimiento <- as.Date(bono$FechaVencimiento[1],format='%Y-%m-%d')
+        d <- vencimiento - Sys.Date()
+      }
+      dias <- c(dias,d)
     }
     fundb$Porcentaje <- perc
+    fundb$DiasxVencer <- dias
 
 
     #Match del fondo con el archivo minimo
@@ -801,25 +812,42 @@ function(input, output, session) {
     indicese <- fundb$Fondo %in% selected_fund
     indicese2 <- fundb$Instrumento %in% "EFECTIVO"
     indexe <- ifelse(indicese == TRUE, indicese2,indicese)
-    cash <- fundb$Monto[indexe]
+    cash <- ifelse(selected_fund=="+CIUSD",0,fundb$Monto[indexe])
 
     #Para fácil realización
     rowindex <- which(minimo$limiteminimo == "facilrealizacion")
-    indicesfr <- funddb$TV %in% mercados$facilrealizacion
+    indicesfr11 <- funddb$TV %in% mercados$facilrealizacion
+    indicesfr22 <- as.numeric(funddb$DiasxVencer) < 93
+    indicesfr <- ifelse(indicesfr11 == FALSE,indicesfr22,indicesfr11)
     #Valores en reporto
     indicesfr1 <- fundb$Fondo %in% selected_fund
     indicesfr2 <- fundb$Instrumento %in% "EFECTIVO"
-    indicesfr3 <- fundb$DiasxVencer < 93
-    indicesfr4 <- ifelse(indicesfr1 == TRUE,indicesfr2,indicesfr1)
-    indicesfr4 <- ifelse(indicesfr4 == FALSE,indicesfr3,indicesfr4)
+    indicesfr3 <- ifelse(indicesfr1 == TRUE,indicesfr2,indicesfr1)
     if (!(TRUE %in% indicesfr))
       facilr <- 0
     else
-      facilr <- sum(funddb$Porcentaje[indicesfr],fundb$Porcentaje[indicesfr4])
+      if(selected_fund != "+CIPLUS")
+        facilr <- sum(funddb$Porcentaje[indicesfr],fundb$Porcentaje[indicesfr3],na.rm = TRUE)
+      else 
+        facilr <- sum(funddb$Porcentaje[indicesfr11],fundb$Porcentaje[indicesfr3],na.rm = TRUE)
+        
     error <- ifelse(facilr < as.numeric(minimo[rowindex,colindex]),
                     paste0("Porcentaje de fácil realización por debajo del límite requerido de: ",
                            minimo[rowindex,colindex]),NA)
     advert <- c(advert,error)
+    
+    if(selected_fund == "+CIPLUS"){
+      rowindex <- which(minimo$limiteminimo == "venc")
+      indicesvenc <- as.numeric(funddb$DiasxVencer) < 93
+      venc <- sum(funddb$Porcentaje[indicesvenc],na.rm = TRUE)
+      error <- ifelse(venc < as.numeric(minimo[rowindex,colindex]),
+                      paste0("Porcentaje de emisoras con vencimiento menor a 3 meses por debajo del límite 
+                             requerido de: ",
+                             minimo[rowindex,colindex]),NA)
+      advert <- c(advert,error)
+      
+      
+    }
 
     #Para los valores gubernamentales en México
     rowindex <- which(minimo$limiteminimo == "gubernacional")
@@ -841,15 +869,13 @@ function(input, output, session) {
     advert <- c(advert,error)
 
     #Para las chequeras
-    if(selected_fund == "+CIUSD"){
-      rowindex <- which(minimo$limiteminimo == "chd")
-      indicesch <- funddb$TV %in% "CHD"
-      chd <- sum(funddb$Porcentaje[indicesch])
-      error <- ifelse(chd < as.numeric(minimo[rowindex,colindex]),
-                      paste0("Porcentaje en chequera por debajo del límite requerido de: ",
-                             minimo[rowindex,colindex]),NA)
-      advert <- c(advert,error) 
-    }
+    rowindex <- which(minimo$limiteminimo == "chd")
+    indicesch <- funddb$TV %in% "CHD"
+    chd <- sum(funddb$Porcentaje[indicesch])
+    error <- ifelse(chd < as.numeric(minimo[rowindex,colindex]),
+                    paste0("Porcentaje en chequera por debajo del límite requerido de: ",
+                           minimo[rowindex,colindex]),NA)
+    advert <- c(advert,error) 
 
     #Para el SIC
     rowindex <- which(minimo$limiteminimo == "sic")
@@ -868,13 +894,23 @@ function(input, output, session) {
                     paste0("Porcentaje de deuda en pesos por debajo del límite requerido de: ",
                            minimo[rowindex,colindex]),NA)
     advert <- c(advert,error)
-
+    
     #Para las FIBRAS
     rowindex <- which(maximo$limitemaximo == "fibras")
     indicesfib <- funddb$TV %in% mercados$fibras
     fibras <- sum(funddb$Porcentaje[indicesfib])
     error <- ifelse(fibras > as.numeric(maximo[rowindex,colindex]),
                     paste0("Porcentaje en FIBRAS por encima del límite requerido de: ",
+                           maximo[rowindex,colindex]),NA)
+    advert <- c(advert,error)
+    
+    #Para las UDI's
+    rowindex <- which(maximo$limitemaximo == "udis")
+    ud <- with(funddb, substring(Instrumento, nchar(Instrumento)))
+    indicesudis <- ifelse(ud == "U" | funddb$TV == "S",TRUE,FALSE)
+    udis <- sum(funddb$Porcentaje[indicesudis])
+    error <- ifelse(udis > as.numeric(maximo[rowindex,colindex]),
+                    paste0("Porcentaje en UDI's por encima del límite requerido de: ",
                            maximo[rowindex,colindex]),NA)
     advert <- c(advert,error)
 
