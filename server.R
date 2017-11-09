@@ -270,6 +270,7 @@ function(input, output, session) {
   preciocc <- reactive({precioc <- get_prices(diah(Sys.Date()-1),input$instrumentoc)[1,2]
   return(precioc)})
   
+  vals <- reactiveValues()
   rowdatac<- c()
   rowdatav <- c()
   
@@ -349,99 +350,11 @@ function(input, output, session) {
   
   
     ######################## Nuevas medidas con fundb ###############################
+  
   dfindd <- eventReactive(input$summit,{
     
-    if(is.null(rowdatav) | is.null(rowdatac)) {
-      if(is.null(rowdatav)){
-        rowdatac$Monto <- substr(rowdatac$Monto, 2, 100)
-        rowdatac$Monto <- as.numeric(gsub(",","",rowdatac$Monto))
-        rowdatac$Titulos <- as.numeric(gsub(",","",rowdatac$Titulos))
-        Totalc <- rowdatac %>% group_by(Fondo) %>% summarise(sum(Monto))
-        colnames(Totalc) <- c("Fondo", "MontoC")
-        Totalv <- data.frame(Fondo=Totalc$Fondo,MontoV=rep(0,length(Totalc$Fondo)))
-        Total <- merge(Totalc,Totalv,by=c("Fondo"), all=TRUE)
-        colnames(Total) <- c("Fondo", "MontoC","MontoV")
-      }
-      else{
-        rowdatav$Monto <- substr(rowdatav$Monto, 2, 100)
-        rowdatav$Monto <- as.numeric(gsub(",","",rowdatav$Monto))
-        rowdatav$Titulos <- as.numeric(gsub(",","",rowdatav$Titulos))
-        Totalv <- rowdatav %>% group_by(Fondo) %>% summarise(sum(Monto))
-        colnames(Totalv) <- c("Fondo", "MontoV")
-        Totalc <- data.frame(Fondo=Totalv$Fondo,MontoC=rep(0,length(Totalv$Fondo)))
-        Total <- merge(Totalc,Totalv,by=c("Fondo"), all=TRUE)
-        colnames(Total) <- c("Fondo", "MontoC","MontoV")
-      }
-    }
-    else{
-      rowdatac$Monto <- substr(rowdatac$Monto, 2, 100)
-      rowdatac$Monto <- as.numeric(gsub(",","",rowdatac$Monto))
-      rowdatav$Monto <- substr(rowdatav$Monto, 2, 100)
-      rowdatav$Monto <- as.numeric(gsub(",","",rowdatav$Monto))
-      rowdatac$Titulos <- as.numeric(gsub(",","",rowdatac$Titulos)) 
-      rowdatav$Titulos <- as.numeric(gsub(",","",rowdatav$Titulos)) 
-      Totalc <- rowdatac %>% group_by(Fondo) %>% summarise(sum(Monto))
-      Totalv <- rowdatav %>% group_by(Fondo) %>% summarise(sum(Monto))
-      colnames(Totalc) <- c("Fondo", "MontoC")
-      colnames(Totalv) <- c("Fondo", "MontoV")
-      Total <- merge(Totalc,Totalv,by=c("Fondo"), all=TRUE)
-      colnames(Total) <- c("Fondo", "MontoC","MontoV")
-    }
-
-    Total2 <- data.frame(Total$Fondo,Instrumento="TOTAL",Total$MontoC,Total$MontoV) 
-    colnames(Total2) <- c("Fondo","Instrumento","MontoC","MontoV")
-    Total2 <- merge(Total,e,by = c("Fondo"),all=TRUE)
-    MontoTotal <- Total2$MontoC - Total2$MontoV
-    EfectivoFinal <- Total2$Monto - Total2$MontoC + Total2$MontoV
-    Total2 <- data.frame(Total2$Fondo,MontoTotal,Total2$Monto,EfectivoFinal)
-    colnames(Total2) <- c("Fondo","MontoTotal","Efectivo","EfectivoFinal")
+    fundb <- vals$fundb
     
-    fundv <- data.frame(Fondo=rowdatav$Fondo,Instrumento=rowdatav$Instrumento,Monto=rowdatav$Monto*-1,
-                        Titulos=rowdatav$Titulos*-1)
-    fundc <- rowdatac
-    fundn <- rbind.data.frame(fundv,fundc)
-    fundn <- fundn %>% group_by(Fondo, Instrumento) %>% summarise(Titulos=sum(Titulos),Monto=sum(Monto))
-    
-    dfunda$Titulos <- as.numeric(gsub(",","",dfunda$Titulos))
-    dfunda$Monto <- substr(dfunda$Monto, 2, 100)
-    dfunda$Monto <- as.numeric(gsub(",","",dfunda$Monto))
-    
-    funds <- merge(dfunda,fundn,by=c("Fondo","Instrumento"), all=TRUE)
-    TitulosA=round(ifelse(is.na(funds$Titulos.x)==TRUE,0,funds$Titulos.x),digits = 0)
-    MontoA=round(ifelse(is.na(funds$Monto.x)==TRUE,0,funds$Monto.x),digits = 2)
-    TitulosN=round(ifelse(is.na(funds$Titulos.y)==TRUE,0,funds$Titulos.y),digits = 0)
-    MontoN=round(ifelse(is.na(funds$Monto.y)==TRUE,0,funds$Monto.y),digits = 2)
-    funds <- data.frame(cbind(funds[,1:2],TitulosA,MontoA,TitulosN,MontoN))
-    colnames(funds) <- c("Fondo", "Instrumento","TitulosA","MontoA","TitulosN","MontoN")
-    Titulos <- round(funds$TitulosA+funds$TitulosN,digits = 0)
-    Monto <- round(funds$MontoA+funds$MontoN,digits = 2)
-    fundb <- data.frame(cbind(funds[,1:2],Titulos,Monto))
-    efectivo <- c()
-    for (x in unique(fundb$Fondo)){
-      indicesf <- fundb$Fondo %in% x
-      indicese <- fundb$Instrumento %in% "EFECTIVO"
-      indices <- ifelse(indicesf == TRUE, indicese,indicesf)
-      nuevoindice <- Total2$Fondo %in% x
-      montoinicial <- fundb$Monto[indices]
-      cond <- is.na(Total2$EfectivoFinal[nuevoindice])
-      montofinal <- ifelse(cond==TRUE,montoinicial,Total2$EfectivoFinal[nuevoindice])
-      fundb$Monto[indices] <- montofinal
-    }
-    
-    #Porcentajes de los fondos después de operaciones
-    perc <- c()
-    for (i in seq(1,length(fundb$Fondo),1)){
-      #Porcentaje
-      indice1 <- fundb$Fondo %in% fundb$Fondo[i]
-      indice2 <- fundb$Instrumento %in% "TOTALES"
-      indices <- ifelse(indice1 == TRUE,indice2,indice1)
-      total <- fundb$Monto[indices]
-      p <- round(fundb$Monto[i]/total,digits = 2)
-      perc <- c(perc,p)
-    }
-    fundb$Porcentaje <- perc
-    
-  ########### New Metrics #####################
     selected_fund <- input$fondo
     
     fondoss <- c("+CIGUB","+CIGUMP","+CIGULP","+CIPLUS")
@@ -536,7 +449,8 @@ function(input, output, session) {
   e <- filter(efec,Instrumento=="EFECTIVO")
   
   #Data frame nueva foto Fondos
-  dffund <- eventReactive(input$summit,{
+  vals$fundb <- c()
+  observeEvent(input$summit,{
     if(is.null(rowdatav) | is.null(rowdatac)) {
       if(is.null(rowdatav)){
         rowdatac$Titulos <- as.numeric(gsub(",","",rowdatac$Titulos)) 
@@ -600,17 +514,17 @@ function(input, output, session) {
     colnames(funds) <- c("Fondo", "Instrumento","TitulosA","MontoA","TitulosN","MontoN")
     Titulos <- round(funds$TitulosA+funds$TitulosN,digits = 0)
     Monto <- round(funds$MontoA+funds$MontoN,digits = 2)
-    fundb <- data.frame(cbind(funds[,1:2],Titulos,Monto))
+    vals$fundb <- data.frame(cbind(funds[,1:2],Titulos,Monto))
     efectivo <- c()
-    for (x in unique(fundb$Fondo)){
-      indicesf <- fundb$Fondo %in% x
-      indicese <- fundb$Instrumento %in% "EFECTIVO"
+    for (x in unique(vals$fundb$Fondo)){
+      indicesf <- vals$fundb$Fondo %in% x
+      indicese <- vals$fundb$Instrumento %in% "EFECTIVO"
       indices <- ifelse(indicesf == TRUE, indicese,indicesf)
       nuevoindice <- Total2$Fondo %in% x
-      montoinicial <- fundb$Monto[indices]
+      montoinicial <- vals$fundb$Monto[indices]
       cond <- is.na(Total2$EfectivoFinal[nuevoindice])
       montofinal <- ifelse(cond==TRUE,montoinicial,Total2$EfectivoFinal[nuevoindice])
-      fundb$Monto[indices] <- montofinal
+      vals$fundb$Monto[indices] <- montofinal
     }
     
     #No tienes suficiente efectivo para la compra
@@ -652,16 +566,16 @@ function(input, output, session) {
     #Porcentajes de los fondos después de operaciones
     perc <- c()
     dias <- c()
-    for (i in seq(1,length(fundb$Fondo),1)){
+    for (i in seq(1,length(vals$fundb$Fondo),1)){
       #Porcentaje
-      indice1 <- fundb$Fondo %in% fundb$Fondo[i]
-      indice2 <- fundb$Instrumento %in% "TOTALES"
+      indice1 <- vals$fundb$Fondo %in% vals$fundb$Fondo[i]
+      indice2 <- vals$fundb$Instrumento %in% "TOTALES"
       indices <- ifelse(indice1 == TRUE,indice2,indice1)
-      total <- fundb$Monto[indices]
-      p <- round(fundb$Monto[i]/total,digits = 2)
+      total <- vals$fundb$Monto[indices]
+      p <- round(vals$fundb$Monto[i]/total,digits = 2)
       perc <- c(perc,p)
       #Dias por vencer
-      bono <- get_bonds(fundb$Instrumento[i])
+      bono <- get_bonds(vals$fundb$Instrumento[i])
       if(is.na(bono[1,1])==TRUE){
         d <- '-'
       } else {
@@ -670,124 +584,26 @@ function(input, output, session) {
       }
       dias <- c(dias,d)
     }
-    fundb$Porcentaje <- perc
-    fundb$DiasxVencer <- dias
+    vals$fundb$Porcentaje <- perc
+    vals$fundb$DiasxVencer <- dias
     #Operaciones realizadas
-    n1 <- fundb$Instrumento %in% rowdatav$Instrumento
-    n2 <- fundb$Instrumento %in% rowdatac$Instrumento
+    n1 <- vals$fundb$Instrumento %in% rowdatav$Instrumento
+    n2 <- vals$fundb$Instrumento %in% rowdatac$Instrumento
     nuevos <- ifelse(n1 == FALSE,n2,n1)
-    fundb$Nuevo <- ifelse(nuevos==FALSE,"",nuevos)
-
-    fundb$Titulos <- comma(fundb$Titulos)
-    fundb$Monto <- paste0("$", formatC(as.numeric(fundb$Monto),format="f", digits=2, big.mark=","))
+    vals$fundb$Nuevo <- ifelse(nuevos==FALSE,"",nuevos)
     
-    return(fundb)
+    fundb2 <- vals$fundb
+    fundb2$Titulos <- comma(fundb2$Titulos)
+    fundb2$Monto <- paste0("$", formatC(as.numeric(fundb2$Monto),format="f", digits=2, big.mark=","))
+    
+    output$fundd = DT::renderDataTable({subset(fundb2,Fondo %in% input$show_vars)},rownames=FALSE)
   })
   
   #Warnings generales
   warnings <- eventReactive(input$summit,{
+    fundb <- vals$fundb
     selected_fund <- input$fondo
-    if(is.null(rowdatav) | is.null(rowdatac)) {
-      if(is.null(rowdatav)){
-        rowdatac$Titulos <- as.numeric(gsub(",","",rowdatac$Titulos))
-        rowdatac$Monto <- substr(rowdatac$Monto, 2, 100)
-        rowdatac$Monto <- as.numeric(gsub(",","",rowdatac$Monto))
-        Totalc <- rowdatac %>% group_by(Fondo) %>% summarise(sum(Monto))
-        colnames(Totalc) <- c("Fondo", "MontoC")
-        Totalv <- data.frame(Fondo=Totalc$Fondo,MontoV=rep(0,length(Totalc$Fondo)))
-        Total <- merge(Totalc,Totalv,by=c("Fondo"), all=TRUE)
-        colnames(Total) <- c("Fondo", "MontoC","MontoV")
-      }
-      else{
-        rowdatav$Titulos <- as.numeric(gsub(",","",rowdatav$Titulos))
-        rowdatav$Monto <- substr(rowdatav$Monto, 2, 100)
-        rowdatav$Monto <- as.numeric(gsub(",","",rowdatav$Monto))
-        Totalv <- rowdatav %>% group_by(Fondo) %>% summarise(sum(Monto))
-        colnames(Totalv) <- c("Fondo", "MontoV")
-        Totalc <- data.frame(Fondo=Totalv$Fondo,MontoC=rep(0,length(Totalv$Fondo)))
-        Total <- merge(Totalc,Totalv,by=c("Fondo"), all=TRUE)
-        colnames(Total) <- c("Fondo", "MontoC","MontoV")
-      }
-    }
-    else{
-      rowdatac$Monto <- substr(rowdatac$Monto, 2, 100)
-      rowdatac$Monto <- as.numeric(gsub(",","",rowdatac$Monto))
-      rowdatav$Monto <- substr(rowdatav$Monto, 2, 100)
-      rowdatav$Monto <- as.numeric(gsub(",","",rowdatav$Monto))
-      rowdatac$Titulos <- as.numeric(gsub(",","",rowdatac$Titulos))
-      rowdatav$Titulos <- as.numeric(gsub(",","",rowdatav$Titulos))
-      Totalc <- rowdatac %>% group_by(Fondo) %>% summarise(sum(Monto))
-      Totalv <- rowdatav %>% group_by(Fondo) %>% summarise(sum(Monto))
-      colnames(Totalc) <- c("Fondo", "MontoC")
-      colnames(Totalv) <- c("Fondo", "MontoV")
-      Total <- merge(Totalc,Totalv,by=c("Fondo"), all=TRUE)
-      colnames(Total) <- c("Fondo", "MontoC","MontoV")
-    }
-
-    Total2 <- data.frame(Total$Fondo,Instrumento="TOTAL",Total$MontoC,Total$MontoV)
-    colnames(Total2) <- c("Fondo","Instrumento","MontoC","MontoV")
-    Total2 <- merge(Total,e,by = c("Fondo"),all=TRUE)
-    MontoTotal <- Total2$MontoC - Total2$MontoV
-    EfectivoFinal <- Total2$Monto - Total2$MontoC + Total2$MontoV
-    Total2 <- data.frame(Total2$Fondo,MontoTotal,Total2$Monto,EfectivoFinal)
-    colnames(Total2) <- c("Fondo","MontoTotal","Efectivo","EfectivoFinal")
-
-    fundv <- data.frame(Fondo=rowdatav$Fondo,Instrumento=rowdatav$Instrumento,Monto=rowdatav$Monto*-1,Titulos=rowdatav$Titulos*-1)
-    fundc <- rowdatac
-    fundn <- rbind.data.frame(fundv,fundc)
-    fundn <- fundn %>% group_by(Fondo, Instrumento) %>% summarise(Titulos=sum(Titulos),Monto=sum(Monto))
-
-    dfunda$Titulos <- as.numeric(gsub(",","",dfunda$Titulos))
-    dfunda$Monto <- substr(dfunda$Monto, 2, 100)
-    dfunda$Monto <- as.numeric(gsub(",","",dfunda$Monto))
-
-    funds <- merge(dfunda,fundn,by=c("Fondo","Instrumento"), all=TRUE)
-    TitulosA=round(ifelse(is.na(funds$Titulos.x)==TRUE,0,funds$Titulos.x),digits = 0)
-    MontoA=round(ifelse(is.na(funds$Monto.x)==TRUE,0,funds$Monto.x),digits = 2)
-    TitulosN=round(ifelse(is.na(funds$Titulos.y)==TRUE,0,funds$Titulos.y),digits = 0)
-    MontoN=round(ifelse(is.na(funds$Monto.y)==TRUE,0,funds$Monto.y),digits = 2)
-    funds <- data.frame(cbind(funds[,1:2],TitulosA,MontoA,TitulosN,MontoN))
-    colnames(funds) <- c("Fondo", "Instrumento","TitulosA","MontoA","TitulosN","MontoN")
-    Titulos <- round(funds$TitulosA+funds$TitulosN,digits = 0)
-    Monto <- round(funds$MontoA+funds$MontoN,digits = 2)
-    fundb <- data.frame(cbind(funds[,1:2],Titulos,Monto))
-    efectivo <- c()
-    for (x in unique(fundb$Fondo)){
-      indicesf <- fundb$Fondo %in% x
-      indicese <- fundb$Instrumento %in% "EFECTIVO"
-      indices <- ifelse(indicesf == TRUE, indicese,indicesf)
-      nuevoindice <- Total2$Fondo %in% x
-      montoinicial <- fundb$Monto[indices]
-      cond <- is.na(Total2$EfectivoFinal[nuevoindice])
-      montofinal <- ifelse(cond==TRUE,montoinicial,Total2$EfectivoFinal[nuevoindice])
-      fundb$Monto[indices] <- montofinal
-    }
-
-    #Porcentajes de los fondos después de operaciones
-    perc <- c()
-    dias <- c()
-    for (i in seq(1,length(fundb$Fondo),1)){
-      #Porcentaje
-      indice1 <- fundb$Fondo %in% fundb$Fondo[i]
-      indice2 <- fundb$Instrumento %in% "TOTALES"
-      indices <- ifelse(indice1 == TRUE,indice2,indice1)
-      total <- fundb$Monto[indices]
-      p <- round(fundb$Monto[i]/total,digits = 2)
-      perc <- c(perc,p)
-      #Dias por vencer
-      bono <- get_bonds(fundb$Instrumento[i])
-      if(is.na(bono[1,1])==TRUE){
-        d <- '-'
-      } else {
-        vencimiento <- as.Date(bono$FechaVencimiento[1],format='%Y-%m-%d')
-        d <- vencimiento - Sys.Date()
-      }
-      dias <- c(dias,d)
-    }
-    fundb$Porcentaje <- perc
-    fundb$DiasxVencer <- dias
-
-
+    
     #Match del fondo con el archivo minimo
     colindex <- which(colnames(minimo) == selected_fund)
     #Los warnings
@@ -980,7 +796,7 @@ function(input, output, session) {
   
  options(DT.options = list(pageLength = 100))
  output$funda = DT::renderDataTable({subset(dfunda,Fondo %in% input$show_vars)},rownames=FALSE)
- output$fundd = DT::renderDataTable({subset(dffund(),Fondo %in% input$show_vars)},rownames=FALSE)
+ 
  output$indd = DT::renderDataTable({subset(dfindd(),Fondo %in% input$show_vars)})
  output$inddx=renderPrint(input$indd_rows_selected)
  output$warn = DT::renderDataTable({subset(warnings(),Fondo %in% input$show_vars)})
