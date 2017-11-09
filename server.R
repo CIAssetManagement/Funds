@@ -271,11 +271,9 @@ function(input, output, session) {
   return(precioc)})
   
   vals <- reactiveValues()
-  rowdatac<- c()
-  rowdatav <- c()
-  
   #Data frame para alimentar la tabla con los instrumentos venta
-  dfv <- eventReactive(input$addv,{
+  vals$rowdatav <- c()
+  observeEvent(input$addv,{
     fond <- input$fondo
     instrumento <- input$instrumentov
     monto <- montovv(input$montov,preciovv())
@@ -284,22 +282,35 @@ function(input, output, session) {
     new_rowv <- data.frame(Fondo=fond,Instrumento=instrumento,
                            Monto=paste0("$", formatC(as.numeric(monto),
                             format="f", digits=2, big.mark=",")),Titulos=comma(titulos))
-    rowdatav <<- rbind(rowdatav,new_rowv)
-    return(rowdatav)
+    vals$rowdatav<<- rbind(vals$rowdatav,new_rowv)
   })
-    #Data frame para alimentar la tabla con los instrumentos compra
-  dfc <- eventReactive(input$addc,{
+  
+  #Eliminando un dato para la venta
+  observeEvent(input$delv,{
+    row_to_delv = as.numeric(input$ventav_rows_selected)
+    vals$rowdatav = vals$rowdatav[-row_to_delv,]
+  })
+  
+  #Data frame para alimentar la tabla con los instrumentos compra
+  vals$rowdatac<- c()
+  observeEvent(input$addc,{
     fondc <- input$fondo
     validate(need(input$instrumentoc != "", "Favor de seleccionar un instrumento"))
     instrumentocc <- input$instrumentoc
     montoc <- montocc(input$montog,preciocc())
     titulosc <- tituloscc(input$titulosg,preciocc())
-
+    
     new_rowc <- data.frame(Fondo=fondc,Instrumento=instrumentocc,
                            Monto=paste0("$", formatC(as.numeric(montoc),
                            format="f", digits=2, big.mark=",")),Titulos= comma(titulosc))
-    rowdatac <<- rbind(rowdatac,new_rowc)
-    return(rowdatac)
+    vals$rowdatac <<- rbind(vals$rowdatac,new_rowc)
+  })
+  
+  #Eliminando un dato para la compra
+  observeEvent(input$delc,{
+    row_to_delc = as.numeric(input$ventac_rows_selected)
+    vals$rowdatac = vals$rowdatac[-row_to_delc,]
+    
   })
 
   ####################################### Indicadores ##############################################
@@ -442,15 +453,17 @@ function(input, output, session) {
   }
   dfunda$Porcentaje  <- perc
   dfunda$DiasxVencer <- dias
-  
- dfunda$Titulos <- comma(dfunda$Titulos)
- dfunda$Monto <- paste0("$", formatC(as.numeric(dfunda$Monto),format="f", digits=2, big.mark=","))
-  
-  e <- filter(efec,Instrumento=="EFECTIVO")
+ 
+ dfunda2 <- dfunda
+ dfunda2$Titulos <- comma(dfunda$Titulos)
+ dfunda2$Monto <- paste0("$", formatC(as.numeric(dfunda$Monto),format="f", digits=2, big.mark=","))
+ e <- filter(efec,Instrumento=="EFECTIVO")
   
   #Data frame nueva foto Fondos
   vals$fundb <- c()
   observeEvent(input$summit,{
+    rowdatav <- vals$rowdatav
+    rowdatac <- vals$rowdatac
     if(is.null(rowdatav) | is.null(rowdatac)) {
       if(is.null(rowdatav)){
         rowdatac$Titulos <- as.numeric(gsub(",","",rowdatac$Titulos)) 
@@ -500,10 +513,6 @@ function(input, output, session) {
     fundc <- rowdatac
     fundn <- rbind.data.frame(fundv,fundc)
     fundn <- fundn %>% group_by(Fondo, Instrumento) %>% summarise(Titulos=sum(Titulos),Monto=sum(Monto))
-    
-    dfunda$Titulos <- as.numeric(gsub(",","",dfunda$Titulos))
-    dfunda$Monto <- substr(dfunda$Monto, 2, 100)
-    dfunda$Monto <- as.numeric(gsub(",","",dfunda$Monto))
     
     funds <- merge(dfunda,fundn,by=c("Fondo","Instrumento"), all=TRUE)
     TitulosA=round(ifelse(is.na(funds$Titulos.x)==TRUE,0,funds$Titulos.x),digits = 0)
@@ -560,8 +569,6 @@ function(input, output, session) {
     }
     ######################################################################################################
     #Revisando las políticas de inversión de los fondos
-    
-    
     
     #Porcentajes de los fondos después de operaciones
     perc <- c()
