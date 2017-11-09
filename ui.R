@@ -57,10 +57,12 @@ fluidPage(
     
     #Tabla instrumentos venta 
     h4('Venta de Instrumentos',style="margin:20px 0 0 0;"),
-    div(style="align:left; position:relative; top:20px;",tableOutput('ventav')),
+    div(style="align:left; position:relative; top:20px;color: #000000;",DT::dataTableOutput('ventav'),
+    actionButton("delv","Eliminar")),
     #Tabla instrumentos compra
     h4('Compra de Instrumentos',style="margin:50px 0 0 0;"),
-    div(style="align:left; position:relative; top:20px;",tableOutput('comprac')),
+    div(style="align:left; position:relative; top:20px; color: #000000;",DT::dataTableOutput('comprac'),
+    actionButton("delc","Eliminar")),
     actionButton("summit","Cargar")),
   
 
