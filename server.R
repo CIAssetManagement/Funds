@@ -499,6 +499,7 @@ function(input, output, session) {
       colnames(Totalv) <- c("Fondo", "MontoV")
       Total <- merge(Totalc,Totalv,by=c("Fondo"), all=TRUE)
       colnames(Total) <- c("Fondo", "MontoC","MontoV")
+      Total[is.na(Total)] <- 0
     }
 
     Total2 <- data.frame(Total$Fondo,Instrumento="TOTAL",Total$MontoC,Total$MontoV) 
