@@ -486,6 +486,7 @@ function(input, output, session) {
       colnames(Totalv) <- c("Fondo", "MontoV")
       Total <- merge(Totalc,Totalv,by=c("Fondo"), all=TRUE)
       colnames(Total) <- c("Fondo", "MontoC","MontoV")
+      Total[is.na(Total)] <- 0
     }
 
     Total2 <- data.frame(Total$Fondo,Instrumento="TOTAL",Total$MontoC,Total$MontoV) 
@@ -526,6 +527,8 @@ function(input, output, session) {
       montofinal <- ifelse(cond==TRUE,montoinicial,Total2$EfectivoFinal[nuevoindice])
       vals$fundb$Monto[indices] <- montofinal
     }
+    
+    print.default(Total)
     
     #No tienes suficiente efectivo para la compra
     error <- ifelse(Total2$EfectivoFinal<0,TRUE,FALSE)
@@ -601,7 +604,9 @@ function(input, output, session) {
   
   #Warnings generales
   warnings <- eventReactive(input$summit,{
+    
     fundb <- vals$fundb
+    
     selected_fund <- input$fondo
     
     #Match del fondo con el archivo minimo
