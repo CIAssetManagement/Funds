@@ -537,8 +537,6 @@ function(input, output, session) {
       vals$fundb$Monto[indices] <- montofinal
     }
     
-    print.default(Total)
-    
     #No tienes suficiente efectivo para la compra
     error <- ifelse(Total2$EfectivoFinal<0,TRUE,FALSE)
     fond <- Total2$Fondo[error]
@@ -606,7 +604,8 @@ function(input, output, session) {
     fundb2$Titulos <- comma(fundb2$Titulos)
     fundb2$Monto <- paste0("$", formatC(as.numeric(fundb2$Monto),format="f", digits=2, big.mark=","))
     
-    output$fundd = DT::renderDataTable({subset(fundb2,Fondo %in% input$show_vars)},rownames=FALSE)
+    output$fundd = DT::renderDataTable({subset(fundb2,Fondo %in% input$show_vars)},rownames=FALSE,
+                                       options = list(searching = FALSE, paging = FALSE))
   })
   
   #Warnings generales
@@ -803,13 +802,14 @@ function(input, output, session) {
   })
   
   
- output$ventav <- renderTable({dfv()})
- output$comprac <- renderTable({dfc()})
+ output$ventav <- DT::renderDataTable({vals$rowdatav},options = list(searching = FALSE, paging = FALSE))
+ output$comprac <- DT::renderDataTable({vals$rowdatac},options = list(searching = FALSE, paging = FALSE))
   
  options(DT.options = list(pageLength = 100))
- output$funda = DT::renderDataTable({subset(dfunda,Fondo %in% input$show_vars)},rownames=FALSE)
+ output$funda = DT::renderDataTable({subset(dfunda,Fondo %in% input$show_vars)},rownames=FALSE,
+                                    options = list(searching = FALSE, paging = FALSE))
  
- output$indd = DT::renderDataTable({subset(dfindd(),Fondo %in% input$show_vars)})
+ output$indd = DT::renderDataTable({subset(dfindd(),Fondo %in% input$show_vars)},options = list(searching = FALSE, paging = FALSE))
  output$inddx=renderPrint(input$indd_rows_selected)
- output$warn = DT::renderDataTable({subset(warnings(),Fondo %in% input$show_vars)})
+ output$warn = DT::renderDataTable({subset(warnings(),Fondo %in% input$show_vars)},options = list(searching = FALSE, paging = FALSE))
 }

@@ -6,7 +6,7 @@ library(shinyjs)
 fondos <- read_excel("//192.168.0.223/CIFONDOS/Fondos.xlsx")
 namesfondos <- sort(as.character(unique(fondos$Fondo)))
 
-estilo <- "width: 90%; height:90%; position:relative; right:170px"
+estilo <- "width: 90%; height:90%; position:relative; right:150px"
 estilor <- "width: 103%; position:relative; right:170px"
 estilo1 <- "width: 100%; height:90%; position:relative; right:100px"
 estilor1 <- "width: 103%; position:relative; right:100px"
@@ -18,7 +18,8 @@ fluidPage(
     tags$style(HTML("
                     @import url('https://fonts.googleapis.com/css?family=Roboto+Slab');
                     .shiny-output-error-validation {color: #fefefe; font-size: 150%}"),
-                    '#sidebar{font-family:"Roboto Slab", serif;color: #fefefe;background-color:#16620a; width:400px}
+                    '#sidebar{font-family:"Roboto Slab", serif;color: #fefefe;background-color:#16620a; 
+                    width:450px; height:1200px}
                     body{background-color:#4fa22a')) ,
   
   headerPanel(h1("Simulador de operaciones", 
@@ -63,7 +64,8 @@ fluidPage(
     h4('Compra de Instrumentos',style="margin:50px 0 0 0;"),
     div(style="align:left; position:relative; top:20px; color: #000000;",DT::dataTableOutput('comprac'),
     actionButton("delc","Eliminar")),
-    actionButton("summit","Cargar")),
+    div(style="align:left; position:relative; top:50px;",
+    actionButton("summit","Cargar"))),
   
 
   fluidRow(
