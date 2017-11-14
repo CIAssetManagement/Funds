@@ -308,7 +308,7 @@ function(input, output, session) {
   
   #Eliminando un dato para la compra
   observeEvent(input$delc,{
-    row_to_delc = as.numeric(input$ventac_rows_selected)
+    row_to_delc = as.numeric(input$comprac_rows_selected)
     vals$rowdatac = vals$rowdatac[-row_to_delc,]
     
   })
@@ -335,72 +335,27 @@ function(input, output, session) {
     indicese <- dfunda$Fondo %in% selected_fund
     indicese2 <- dfunda$Instrumento %in% "EFECTIVO"
     indexe <- ifelse(indicese == TRUE, indicese2,indicese)
-    cash <- dfunda$Monto[indexe]
     
     if (selected_fund %in% fondos){
       
       durant <- round(PortfolioDuration(diah(Sys.Date()-1),instrumentos,pesos)*360,digits=0)
       convexant <- round(PortfolioConvexity(diah(Sys.Date()-1),instrumentos,pesos),digits=0) 
-      valueant <- abs(RiskValues(instrumentos,titulos,cash))
+      valueant <- abs(RiskValues(diah(Sys.Date()-1),instrumentos,titulos,"bonds"))
       varant <- paste0(round(valueant$VaR*100,digits=2),"%")
       cvarant <- paste0(round(valueant$CVaR*100,digits=2),"%")
       metrics <- data.frame(t(c(Fondo=selected_fund,Duracion=durant,Convexidad=convexant,VaR=varant,CVaR=cvarant)))
-      output$inda = DT::renderDataTable({metrics})
+      output$inda = DT::renderDataTable({metrics},options = list(searching = FALSE, paging = FALSE))
       
     } else {
       
-      valueant <- abs(RiskValues(instrumentos,titulos,cash))
+      valueant <- abs(RiskValues(diah(Sys.Date()-1),instrumentos,titulos,"stocks"))
       varant <- paste0(round(valueant$VaR*100,digits=2),"%")
       cvarant <- paste0(round(valueant$CVaR*100,digits=2),"%")
       metrics <- data.frame(t(c(Fondo=selected_fund)))
       metrics <- data.frame(t(c(Fondo=selected_fund,VaR=varant,CVaR=cvarant)))
-      output$inda = DT::renderDataTable({metrics})
+      output$inda = DT::renderDataTable({metrics},options = list(searching = FALSE, paging = FALSE))
     }
 
-  })
-  
-  
-    ######################## Nuevas medidas con fundb ###############################
-  
-  dfindd <- eventReactive(input$summit,{
-    
-    fundb <- vals$fundb
-    
-    selected_fund <- input$fondo
-    
-    fondoss <- c("+CIGUB","+CIGUMP","+CIGULP","+CIPLUS")
-    especiales <- c("TOTALES","EFECTIVO")
-    fondo <- fundb %>%
-      filter(!(Instrumento %in% especiales))
-    
-    indicesa <- fondo$Fondo %in% selected_fund
-    instrumentos <- fondo$Instrumento[indicesa]
-    pesos <- fondo$Porcentaje[indicesa]
-    titulos <- fondo$Titulos[indicesa]
-    
-    indicese <- fundb$Fondo %in% selected_fund
-    indicese2 <- fundb$Instrumento %in% "EFECTIVO"
-    indexe <- ifelse(indicese == TRUE, indicese2,indicese)
-    cash <- fundb$Monto[indexe]
-    
-    if (selected_fund %in% fondoss){
-      
-      durdes <- round(PortfolioDuration(diah(Sys.Date()-1),instrumentos,pesos)*360,digits=0)
-      convexdes <- round(PortfolioConvexity(diah(Sys.Date()-1),instrumentos,pesos),digits=0)
-      valuesdes <- abs(RiskValues(instrumentos,titulos, cash))
-      vardes <- paste0(round(valuesdes$VaR*100,digits=2),"%")
-      cvardes <- paste0(round(valuesdes$CVaR*100,digits=2),"%")
-      metricsd <- data.frame(t(c(Fondo=selected_fund,Duracion=durdes,Convexidad=convexdes,VaR=vardes,CVaR=cvardes)))
-      
-    } else {
-      
-      valuedes <- abs(RiskValues(instrumentos,titulos,cash))
-      vardes <- paste0(round(valuedes$VaR*100,digits=2),"%")
-      cvardes <- paste0(round(valuedes$CVaR*100,digits=2),"%")
-      metricsd <- data.frame(t(c(Fondo=selected_fund,VaR=vardes,CVaR=cvardes)))
-    }
-    
-    return(metricsd)
   })
   
   #Warning para compra de ETFs
@@ -439,7 +394,7 @@ function(input, output, session) {
     indice2 <- dfunda$Instrumento %in% "TOTALES"
     indices <- ifelse(indice1 == TRUE,indice2,indice1)
     total <- dfunda$Monto[indices]
-    p <- round(dfunda$Monto[i]/total,digits = 2)
+    p <- round(dfunda$Monto[i]/total,digits = 3)
     perc <- c(perc,p)
     #Dias por vencer
     bono <- get_bonds(dfunda$Instrumento[i])
@@ -457,10 +412,12 @@ function(input, output, session) {
  dfunda2 <- dfunda
  dfunda2$Titulos <- comma(dfunda$Titulos)
  dfunda2$Monto <- paste0("$", formatC(as.numeric(dfunda$Monto),format="f", digits=2, big.mark=","))
+ dfunda2$Porcentaje <- paste0(formatC(as.numeric(dfunda$Porcentaje*100),format="f", digits=2, big.mark=","),"%")
  e <- filter(efec,Instrumento=="EFECTIVO")
   
   #Data frame nueva foto Fondos
   vals$fundb <- c()
+  vals$ValuesAtRisk <- TRUE
   observeEvent(input$summit,{
     rowdatav <- vals$rowdatav
     rowdatac <- vals$rowdatac
@@ -537,6 +494,39 @@ function(input, output, session) {
       vals$fundb$Monto[indices] <- montofinal
     }
     
+    ######################################################################################################
+    #Revisando las políticas de inversión de los fondos
+    
+    #Porcentajes de los fondos después de operaciones
+    perc <- c()
+    dias <- c()
+    for (i in seq(1,length(vals$fundb$Fondo),1)){
+      #Porcentaje
+      indice1 <- vals$fundb$Fondo %in% vals$fundb$Fondo[i]
+      indice2 <- vals$fundb$Instrumento %in% "TOTALES"
+      indices <- ifelse(indice1 == TRUE,indice2,indice1)
+      total <- vals$fundb$Monto[indices]
+      p <- round(vals$fundb$Monto[i]/total,digits = 3)
+      perc <- c(perc,p)
+      #Dias por vencer
+      bono <- get_bonds(vals$fundb$Instrumento[i])
+      if(is.na(bono[1,1])==TRUE){
+        d <- '-'
+      } else {
+        vencimiento <- as.Date(bono$FechaVencimiento[1],format='%Y-%m-%d')
+        d <- vencimiento - Sys.Date()
+      }
+      dias <- c(dias,d)
+    }
+    vals$fundb$Porcentaje <- perc
+    vals$fundb$DiasxVencer <- dias
+    
+    #Operaciones realizadas
+    n1 <- vals$fundb$Instrumento %in% rowdatav$Instrumento
+    n2 <- vals$fundb$Instrumento %in% rowdatac$Instrumento
+    nuevos <- ifelse(n1 == FALSE,n2,n1)
+    vals$fundb$Nuevo <- ifelse(nuevos==FALSE,"",nuevos)
+    
     #No tienes suficiente efectivo para la compra
     error <- ifelse(Total2$EfectivoFinal<0,TRUE,FALSE)
     fond <- Total2$Fondo[error]
@@ -561,51 +551,75 @@ function(input, output, session) {
     if(TRUE %in% error){
       showModal(modalDialog(title = "ERROR",paste0("No hay suficiente efectivo para realizar la operacion ",
                                                    "en los siguientes fondos: ",fond)))
-      stop()
+      vals$ValuesAtRisk <- FALSE
+      return()
+    } else {
+      vals$ValuesAtRisk <- TRUE
     }
     if(TRUE %in% error2){
       showModal(modalDialog(title = "ERROR",paste0("No tienes suficientes títulos para realizar la venta ",
                                                    "de los siguientes instrumentos: ",fond2)))
-      stop()
+      vals$ValuesAtRisk <- FALSE
+      return()
+    } else {
+      vals$ValuesAtRisk <- TRUE
     }
-    ######################################################################################################
-    #Revisando las políticas de inversión de los fondos
-    
-    #Porcentajes de los fondos después de operaciones
-    perc <- c()
-    dias <- c()
-    for (i in seq(1,length(vals$fundb$Fondo),1)){
-      #Porcentaje
-      indice1 <- vals$fundb$Fondo %in% vals$fundb$Fondo[i]
-      indice2 <- vals$fundb$Instrumento %in% "TOTALES"
-      indices <- ifelse(indice1 == TRUE,indice2,indice1)
-      total <- vals$fundb$Monto[indices]
-      p <- round(vals$fundb$Monto[i]/total,digits = 2)
-      perc <- c(perc,p)
-      #Dias por vencer
-      bono <- get_bonds(vals$fundb$Instrumento[i])
-      if(is.na(bono[1,1])==TRUE){
-        d <- '-'
-      } else {
-        vencimiento <- as.Date(bono$FechaVencimiento[1],format='%Y-%m-%d')
-        d <- vencimiento - Sys.Date()
-      }
-      dias <- c(dias,d)
-    }
-    vals$fundb$Porcentaje <- perc
-    vals$fundb$DiasxVencer <- dias
-    #Operaciones realizadas
-    n1 <- vals$fundb$Instrumento %in% rowdatav$Instrumento
-    n2 <- vals$fundb$Instrumento %in% rowdatac$Instrumento
-    nuevos <- ifelse(n1 == FALSE,n2,n1)
-    vals$fundb$Nuevo <- ifelse(nuevos==FALSE,"",nuevos)
     
     fundb2 <- vals$fundb
     fundb2$Titulos <- comma(fundb2$Titulos)
     fundb2$Monto <- paste0("$", formatC(as.numeric(fundb2$Monto),format="f", digits=2, big.mark=","))
+    fundb2$Porcentaje <- paste0(formatC(as.numeric(fundb2$Porcentaje*100),format="f", digits=2, big.mark=","),"%")
     
-    output$fundd = DT::renderDataTable({subset(fundb2,Fondo %in% input$show_vars)},rownames=FALSE,
+    if(vals$ValuesAtRisk ==TRUE)
+      output$fundd = DT::renderDataTable({subset(fundb2,Fondo %in% input$show_vars)},rownames=FALSE,
                                        options = list(searching = FALSE, paging = FALSE))
+    else
+      output$fundd = DT::renderDataTable({c()},rownames=FALSE,
+                                         options = list(searching = FALSE, paging = FALSE))
+  })
+  
+  ######################## Nuevas medidas con fundb ###############################
+  
+  dfindd <- eventReactive(input$summit,{
+    
+    fundb <- vals$fundb
+    
+    selected_fund <- input$fondo
+    
+    fondoss <- c("+CIGUB","+CIGUMP","+CIGULP","+CIPLUS")
+    especiales <- c("TOTALES","EFECTIVO")
+    fondo <- fundb %>%
+      filter(!(Instrumento %in% especiales))
+    
+    indicesa <- fondo$Fondo %in% selected_fund
+    instrumentos <- fondo$Instrumento[indicesa]
+    pesos <- fondo$Porcentaje[indicesa]
+    titulos <- fondo$Titulos[indicesa]
+    
+    indicese <- fundb$Fondo %in% selected_fund
+    indicese2 <- fundb$Instrumento %in% "EFECTIVO"
+    indexe <- ifelse(indicese == TRUE, indicese2,indicese)
+    
+    if (selected_fund %in% fondoss){
+      
+      durdes <- round(PortfolioDuration(diah(Sys.Date()-1),instrumentos,pesos)*360,digits=0)
+      convexdes <- round(PortfolioConvexity(diah(Sys.Date()-1),instrumentos,pesos),digits=0)
+      valuesdes <- abs(RiskValues(diah(Sys.Date()-1),instrumentos,titulos, "bonds"))
+      vardes <- paste0(round(valuesdes$VaR*100,digits=2),"%")
+      cvardes <- paste0(round(valuesdes$CVaR*100,digits=2),"%")
+      metricsd <- data.frame(t(c(Fondo=selected_fund,Duracion=durdes,Convexidad=convexdes,VaR=vardes,CVaR=cvardes)))
+      
+    } else {
+      
+      valuedes <- abs(RiskValues(diah(Sys.Date()-1),instrumentos,titulos,"stocks"))
+      vardes <- paste0(round(valuedes$VaR*100,digits=2),"%")
+      cvardes <- paste0(round(valuedes$CVaR*100,digits=2),"%")
+      metricsd <- data.frame(t(c(Fondo=selected_fund,VaR=vardes,CVaR=cvardes)))
+    }
+    if(vals$ValuesAtRisk == TRUE)
+      return(metricsd)
+    else
+      return()
   })
   
   #Warnings generales
@@ -646,10 +660,13 @@ function(input, output, session) {
     indicesfr11 <- funddb$TV %in% mercados$facilrealizacion
     indicesfr22 <- as.numeric(funddb$DiasxVencer) < 93
     indicesfr <- ifelse(indicesfr11 == FALSE,indicesfr22,indicesfr11)
+    
+    
     #Valores en reporto
     indicesfr1 <- fundb$Fondo %in% selected_fund
     indicesfr2 <- fundb$Instrumento %in% "EFECTIVO"
     indicesfr3 <- ifelse(indicesfr1 == TRUE,indicesfr2,indicesfr1)
+    
     if (!(TRUE %in% indicesfr))
       facilr <- 0
     else
@@ -689,10 +706,11 @@ function(input, output, session) {
     rowindex <- which(maximo$limitemaximo == "guberinternacional")
     indicesgi <- funddb$TV %in% mercados$guberinternacional
     gi <- sum(funddb$Porcentaje[indicesgi])
-    error <- ifelse(gi < as.numeric(minimo[rowindex,colindex]),
+    gi <- ifelse(is.na(gi)==TRUE,0,gi)
+    error <- ifelse(gi > as.numeric(maximo[rowindex,colindex]),
                     paste0("Porcentaje en valores gubernamentales en el extranjero por encima del 
                            límite requerido de: ",
-                           minimo[rowindex,colindex]),NA)
+                           maximo[rowindex,colindex]),NA)
     advert <- c(advert,error)
 
     #Para las chequeras
@@ -767,8 +785,12 @@ function(input, output, session) {
     }
       
     #Para el VaR
+    fondoss <- c("+CIGUB","+CIGUMP","+CIGULP","+CIPLUS")
     rowindex <- which(maximo$limitemaximo == "var")
-    valuea <- abs(RiskValues(instrumentos,titulos,cash)$VaR)
+    if(selected_fund %in% fondoss)
+      valuea <- abs(RiskValues(diah(Sys.Date()-1),instrumentos,titulos,"bonds")$VaR)
+    else
+      valuea <- abs(RiskValues(diah(Sys.Date()-1),instrumentos,titulos,"stocks")$VaR)
     error <- ifelse(valuea > as.numeric(maximo[rowindex,colindex]),
                     paste0("VaR superior al límite requerido de: ",
                            round(maximo[rowindex,colindex]*100,digits=2),"%"),NA)
@@ -798,7 +820,11 @@ function(input, output, session) {
     advert <- advert[is.na(advert)==FALSE]
 
     war <- data.frame(Fondo=selected_fund,Warnings=advert)
-    return(war)
+    
+    if(vals$ValuesAtRisk == TRUE)
+      return(war)
+    else
+      return()
   })
   
   
@@ -806,7 +832,7 @@ function(input, output, session) {
  output$comprac <- DT::renderDataTable({vals$rowdatac},options = list(searching = FALSE, paging = FALSE))
   
  options(DT.options = list(pageLength = 100))
- output$funda = DT::renderDataTable({subset(dfunda,Fondo %in% input$show_vars)},rownames=FALSE,
+ output$funda = DT::renderDataTable({subset(dfunda2,Fondo %in% input$show_vars)},rownames=FALSE,
                                     options = list(searching = FALSE, paging = FALSE))
  
  output$indd = DT::renderDataTable({subset(dfindd(),Fondo %in% input$show_vars)},options = list(searching = FALSE, paging = FALSE))
