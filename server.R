@@ -474,13 +474,13 @@ function(input, output, session) {
     
     funds <- merge(dfunda,fundn,by=c("Fondo","Instrumento"), all=TRUE)
     TitulosA=round(ifelse(is.na(funds$Titulos.x)==TRUE,0,funds$Titulos.x),digits = 0)
-    MontoA=round(ifelse(is.na(funds$Monto.x)==TRUE,0,funds$Monto.x),digits = 2)
+    MontoA=ifelse(is.na(funds$Monto.x)==TRUE,0,funds$Monto.x)
     TitulosN=round(ifelse(is.na(funds$Titulos.y)==TRUE,0,funds$Titulos.y),digits = 0)
-    MontoN=round(ifelse(is.na(funds$Monto.y)==TRUE,0,funds$Monto.y),digits = 2)
+    MontoN=ifelse(is.na(funds$Monto.y)==TRUE,0,funds$Monto.y)
     funds <- data.frame(cbind(funds[,1:2],TitulosA,MontoA,TitulosN,MontoN))
     colnames(funds) <- c("Fondo", "Instrumento","TitulosA","MontoA","TitulosN","MontoN")
     Titulos <- round(funds$TitulosA+funds$TitulosN,digits = 0)
-    Monto <- round(funds$MontoA+funds$MontoN,digits = 2)
+    Monto <- funds$MontoA+funds$MontoN
     vals$fundb <- data.frame(cbind(funds[,1:2],Titulos,Monto))
     efectivo <- c()
     for (x in unique(vals$fundb$Fondo)){
