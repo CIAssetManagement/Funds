@@ -828,8 +828,10 @@ function(input, output, session) {
   })
   
   
- output$ventav <- DT::renderDataTable({vals$rowdatav},options = list(searching = FALSE, paging = FALSE))
- output$comprac <- DT::renderDataTable({vals$rowdatac},options = list(searching = FALSE, paging = FALSE))
+ output$ventav <- DT::renderDataTable({subset(vals$rowdatav,Fondo %in% input$show_vars)},
+                                      options = list(searching = FALSE, paging = FALSE))
+ output$comprac <- DT::renderDataTable({subset(vals$rowdatac,Fondo %in% input$show_vars)},
+                                       options = list(searching = FALSE, paging = FALSE))
   
  options(DT.options = list(pageLength = 100))
  output$funda = DT::renderDataTable({subset(dfunda2,Fondo %in% input$show_vars)},rownames=FALSE,
