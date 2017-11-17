@@ -199,12 +199,6 @@ function(input, output, session) {
                                                                                  selected_valuev))
   })
   
-  #Update de los fondos seleccionados
-  observe({
-    selected_fund <- input$fondo
-    updateCheckboxGroupInput(session,"show_vars",selected=selected_fund)
-  })
-  
   #Bloqueo de titulos o monto
   observe({
     montoventa <- input$montov
@@ -583,7 +577,7 @@ function(input, output, session) {
     fundb2$Porcentaje <- paste0(formatC(as.numeric(fundb2$Porcentaje*100),format="f", digits=2, big.mark=","),"%")
     
     if(vals$ValuesAtRisk ==TRUE)
-      output$fundd = DT::renderDataTable({subset(fundb2,Fondo %in% input$show_vars)},rownames=FALSE,
+      output$fundd = DT::renderDataTable({subset(fundb2,Fondo %in% input$fondo)},rownames=FALSE,
                                        options = list(searching = FALSE, paging = FALSE))
     else
       output$fundd = DT::renderDataTable({c()},rownames=FALSE,
@@ -840,17 +834,17 @@ function(input, output, session) {
   })
   
   
-  output$ventav <- DT::renderDataTable({subset(vals$rowdatav,Fondo %in% input$show_vars)},
+  output$ventav <- DT::renderDataTable({subset(vals$rowdatav,Fondo %in% input$fondo)},
                                       options = list(searching = FALSE, paging = FALSE))
  
-  output$comprac <- DT::renderDataTable({subset(vals$rowdatac,Fondo %in% input$show_vars)},
+  output$comprac <- DT::renderDataTable({subset(vals$rowdatac,Fondo %in% input$fondo)},
                                        options = list(searching = FALSE, paging = FALSE))
   
   options(DT.options = list(pageLength = 100))
-  output$funda = DT::renderDataTable({subset(dfunda2,Fondo %in% input$show_vars)},rownames=FALSE,
+  output$funda = DT::renderDataTable({subset(dfunda2,Fondo %in% input$fondo)},rownames=FALSE,
                                     options = list(searching = FALSE, paging = FALSE))
  
-  output$indd = DT::renderDataTable({subset(dfindd(),Fondo %in% input$show_vars)},options = list(searching = FALSE, paging = FALSE))
+  output$indd = DT::renderDataTable({subset(dfindd(),Fondo %in% input$fondo)},options = list(searching = FALSE, paging = FALSE))
   output$inddx=renderPrint(input$indd_rows_selected)
-  output$warn = DT::renderDataTable({subset(warnings(),Fondo %in% input$show_vars)},options = list(searching = FALSE, paging = FALSE))
+  output$warn = DT::renderDataTable({subset(warnings(),Fondo %in% input$fondo)},options = list(searching = FALSE, paging = FALSE))
 }
