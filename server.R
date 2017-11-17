@@ -31,6 +31,14 @@ minimo <- read_excel("//192.168.0.223/CIFONDOS/limites.xlsx",sheet = "Minimo")
 #Dias festivos
 festivos <- read.csv("//192.168.0.223/CIFONDOS/festivos.csv",header=TRUE,stringsAsFactors = FALSE)
 festivos$dias <- as.Date(festivos$dias,format="%d/%m/%Y")
+#Efectivo covaf
+resumen <- read.csv("//192.168.0.223/CIFONDOS/Resumen_Operaciones.csv",header=TRUE)
+namesfondos <- c("+CIBOLS", "+CIEQUS", "+CIGUB", "+CIGULP", "+CIGUMP", "+CIPLUS", "+CIUSD")
+resumen <-  unique(filter(resumen,descripcion %in% namesfondos ))
+resumen <- resumen %>% mutate(Monto= saldo+compras-ventas-cintermediario+vintermediario) %>% 
+                       mutate(Instrumento = "EFECTIVO") %>% mutate(Titulos = 0) %>% 
+                       select(tipo,descripcion,Instrumento,Titulos,Monto)
+colnames(resumen) <- c("I","Fondo","Instrumento","Titulos","Monto")
 
 #Dia hábil
 diah <-  function(fecha){
@@ -371,7 +379,9 @@ function(input, output, session) {
      }
    })
    
-
+  #Efectivo ciusd
+  ciusd <- resumen[resumen$Fondo == "+CIUSD",]
+  
   #Data frame foto actual Fondos
   instrumento <- paste0(fondos$TV,"-",fondos$Emisora,"-",fondos$Serie)
   instrumento <- ifelse(instrumento == "-TOTALES-","TOTALES",instrumento)
@@ -379,6 +389,7 @@ function(input, output, session) {
   colnames(dfunda) <- c("I","Fondo","TV","Emisora","Serie","Titulos","Monto")
   dfunda$Instrumento <- as.character(instrumento)
   dfunda$Instrumento <- ifelse(dfunda$I!="R",dfunda$Instrumento,dfunda$Instrumento <- "EFECTIVO")
+  dfunda <- merge(dfunda,ciusd,all = TRUE)
   efec <- dfunda %>% group_by(Fondo, Instrumento) %>% summarise(sum(Titulos), 
                                                                 sum(Monto))
   colnames(efec) <- c("Fondo","Instrumento","Titulos","Monto")
