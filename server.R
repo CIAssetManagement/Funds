@@ -1,7 +1,7 @@
+library(readxl)
 library(shiny)
 library(DT)
 library(dplyr)
-library(readxl)
 library(xts)
 library(quantmod)
 library(RMySQL)
@@ -9,8 +9,10 @@ library(FundTools)
 library(scales)
 library(shinyjs)
 
-#Matando la notación científica
-options(scipen = 999)
+# Matando la notación científica, warnings y mensajes de error (tener mucho cuidado, sólo se hizo con
+# fines estéticos)
+
+  options(scipen = 999)
 
 #Instrumentos
 info_diaria <- read.csv("//192.168.0.223/CIFONDOS/Instrumentos.csv",header=TRUE,stringsAsFactors = FALSE)
@@ -153,7 +155,6 @@ instrumentocompra <- function(nombre,tv,emisora){
 
 #Función servidor
 function(input, output, session) {
-  
   
   #Seleccion del Tipo de Valor
   observe({
@@ -828,16 +829,17 @@ function(input, output, session) {
   })
   
   
- output$ventav <- DT::renderDataTable({subset(vals$rowdatav,Fondo %in% input$show_vars)},
+  output$ventav <- DT::renderDataTable({subset(vals$rowdatav,Fondo %in% input$show_vars)},
                                       options = list(searching = FALSE, paging = FALSE))
- output$comprac <- DT::renderDataTable({subset(vals$rowdatac,Fondo %in% input$show_vars)},
+ 
+  output$comprac <- DT::renderDataTable({subset(vals$rowdatac,Fondo %in% input$show_vars)},
                                        options = list(searching = FALSE, paging = FALSE))
   
- options(DT.options = list(pageLength = 100))
- output$funda = DT::renderDataTable({subset(dfunda2,Fondo %in% input$show_vars)},rownames=FALSE,
+  options(DT.options = list(pageLength = 100))
+  output$funda = DT::renderDataTable({subset(dfunda2,Fondo %in% input$show_vars)},rownames=FALSE,
                                     options = list(searching = FALSE, paging = FALSE))
  
- output$indd = DT::renderDataTable({subset(dfindd(),Fondo %in% input$show_vars)},options = list(searching = FALSE, paging = FALSE))
- output$inddx=renderPrint(input$indd_rows_selected)
- output$warn = DT::renderDataTable({subset(warnings(),Fondo %in% input$show_vars)},options = list(searching = FALSE, paging = FALSE))
+  output$indd = DT::renderDataTable({subset(dfindd(),Fondo %in% input$show_vars)},options = list(searching = FALSE, paging = FALSE))
+  output$inddx=renderPrint(input$indd_rows_selected)
+  output$warn = DT::renderDataTable({subset(warnings(),Fondo %in% input$show_vars)},options = list(searching = FALSE, paging = FALSE))
 }
