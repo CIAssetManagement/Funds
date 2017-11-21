@@ -838,6 +838,10 @@ function(input, output, session) {
       return()
   })
   
+  cv <- paste0("CVar es la máxima perdida esperada dado que se superó el VaR")
+  report <- paste0("Reporto: sólo se puede realizar con contrapartes de calificación mínima de A")
+  deri <- paste0("No se puede invertir en derivados, valores estructuraros, certificados bursátiles fiduciarios o respaldados por activos")
+  msj <- c(cv,report,deri)
   
  output$ventav <- DT::renderDataTable({subset(vals$rowdatav,Fondo %in% input$show_vars)},
                                       options = list(searching = FALSE, paging = FALSE))
@@ -851,4 +855,5 @@ function(input, output, session) {
  output$indd = DT::renderDataTable({subset(dfindd(),Fondo %in% input$show_vars)},options = list(searching = FALSE, paging = FALSE))
  output$inddx=renderPrint(input$indd_rows_selected)
  output$warn = DT::renderDataTable({subset(warnings(),Fondo %in% input$show_vars)},options = list(searching = FALSE, paging = FALSE))
+ output$mensaje = renderPrint(msj)
 }
