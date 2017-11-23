@@ -17,7 +17,9 @@ fluidPage(
   tags$head(
     tags$style(HTML("
                     @import url('https://fonts.googleapis.com/css?family=Roboto+Slab');
-                    .shiny-output-error-validation {color: #fefefe; font-size: 150%}"),
+                    .shiny-output-error-validation {color: #fefefe; font-size: 150%}"),type="text/css",
+               ".shiny-output-error { visibility: hidden; }",
+               ".shiny-output-error:before { visibility: hidden; }",
                     '#sidebar{font-family:"Roboto Slab", serif;color: #fefefe;background-color:#16620a; 
                     width:450px; height:1200px}
                     body{background-color:#4fa22a')) ,
