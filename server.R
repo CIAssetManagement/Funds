@@ -9,20 +9,21 @@ library(FundTools)
 library(scales)
 library(shinyjs)
 
-# Matando la notación científica, warnings y mensajes de error (tener mucho cuidado, sólo se hizo con
-# fines estéticos)
-
-  options(scipen = 999)
+# Matando la notación científica
+options(scipen = 999)
 
 #Instrumentos
 info_diaria <- read.csv("//192.168.0.223/CIFONDOS/Instrumentos.csv",header=TRUE,stringsAsFactors = FALSE)
 #Fondos
 fondos <- read_excel("//192.168.0.223/CIFONDOS/Fondos.xlsx")
-colnames(fondos) <- c("I","Fondo","TV","Emisora","Serie","Títulos","Costo.Total")
+colnames(fondos) <- c("I","Fondo","TV","Emisora","Serie","Títulos","Costo.Total","Comparable")
 fondos[is.na(fondos)] <- ""
 fondos$Títulos <- as.numeric(as.character(fondos$Títulos))
 fondos$Costo.Total <- as.numeric(as.character(fondos$Costo.Total))
 fondos <- fondos[!(fondos$Emisora == "CASITA"),]
+#Comparables de los fondos
+comparables <- data.frame(id=paste0(fondos$TV,"-",fondos$Emisora,"-",fondos$Serie),Comparable=fondos$Comparable)
+fondos$Comparable <-  NULL
 #Mercados
 mercados <- read.csv("//192.168.0.223/CIFONDOS/mercados.csv",header=TRUE,stringsAsFactors = FALSE)
 #Restricciones de los fondos
