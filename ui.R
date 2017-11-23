@@ -90,7 +90,9 @@ fluidPage(
     h2("Medidas de Riesgo Simulación",style = paste0("font-family: 'Roboto Slab', serif;
                  font-weight: 500; line-height: 1.1;color: #fefefe; ",estilo1)),
     hr(style=estilor1),
-    div(DT::dataTableOutput("indd"),style=estilo1))))
+    div(DT::dataTableOutput("indd"),style=estilo1)))
+    fluidRow(column(7,hr(style="position:relative; left:450px;"),
+                    div(style="position:relative; left:450px;",verbatimTextOutput('mensaje')))))
   )
 )
 
