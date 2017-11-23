@@ -836,7 +836,7 @@ function(input, output, session) {
   
   cv <- paste0("CVar es la máxima perdida esperada dado que se superó el VaR")
   report <- paste0("Reporto: sólo se puede realizar con contrapartes de calificación mínima de A")
-  deri <- paste0("No se puede invertir en derivados, valores estructuraros, certificados bursátiles fiduciarios o respaldados por activos")
+  deri <- paste0("No se puede invertir en derivados, valores estructurados, certificados bursátiles fiduciarios o respaldados por activos")
   msj <- c(cv,report,deri)
   
   output$ventav <- DT::renderDataTable({subset(vals$rowdatav,Fondo %in% input$fondo)},
