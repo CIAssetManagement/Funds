@@ -848,15 +848,12 @@ function(input, output, session) {
   options(DT.options = list(pageLength = 100))
   output$funda = DT::renderDataTable({subset(dfunda2,Fondo %in% input$fondo)},rownames=FALSE,
                                     options = list(searching = FALSE, paging = FALSE))
- 
-<<<<<<< HEAD
-  output$indd = DT::renderDataTable({subset(dfindd(),Fondo %in% input$fondo)},options = list(searching = FALSE, paging = FALSE))
-  output$inddx=renderPrint(input$indd_rows_selected)
-  output$warn = DT::renderDataTable({subset(warnings(),Fondo %in% input$fondo)},options = list(searching = FALSE, paging = FALSE))
-=======
+
+ output$indd = DT::renderDataTable({subset(dfindd(),Fondo %in% input$fondo)},options = list(searching = FALSE, paging = FALSE))
+ output$inddx=renderPrint(input$indd_rows_selected)
+ output$warn = DT::renderDataTable({subset(warnings(),Fondo %in% input$fondo)},options = list(searching = FALSE, paging = FALSE))
  output$indd = DT::renderDataTable({subset(dfindd(),Fondo %in% input$show_vars)},options = list(searching = FALSE, paging = FALSE))
  output$inddx=renderPrint(input$indd_rows_selected)
  output$warn = DT::renderDataTable({subset(warnings(),Fondo %in% input$show_vars)},options = list(searching = FALSE, paging = FALSE))
  output$mensaje = renderPrint(msj)
->>>>>>> 38b63d3b6e23a2fc4c46bdaf02eddca59ad67f22
 }
