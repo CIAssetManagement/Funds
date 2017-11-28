@@ -382,17 +382,18 @@ function(input, output, session) {
   #Data frame foto actual Fondos
   instrumento <- paste0(fondos$TV,"-",fondos$Emisora,"-",fondos$Serie)
   instrumento <- ifelse(instrumento == "-TOTALES-","TOTALES",instrumento)
-  dfunda <- fondos
-  colnames(dfunda) <- c("I","Fondo","TV","Emisora","Serie","Titulos","Monto")
-  dfunda$Instrumento <- as.character(instrumento)
-  dfunda$Instrumento <- ifelse(dfunda$I!="R",dfunda$Instrumento,dfunda$Instrumento <- "EFECTIVO")
-  dfunda <- merge(dfunda,ciusd,all = TRUE)
-  efec <- dfunda %>% group_by(Fondo, Instrumento) %>% summarise(sum(Titulos), 
-                                                                sum(Monto))
-  colnames(efec) <- c("Fondo","Instrumento","Titulos","Monto")
-  ind <- ifelse(efec$Instrumento=="EFECTIVO",efec$Titulos== 0,efec$Titulos==efec$Titulos)
-  Tit <- data.frame(Titulos=ifelse(ind=="TRUE",efec$Titulos,0))
-  dfunda <- data.frame(cbind(efec[,1:2]),Tit,Monto=efec$Monto)
+  #dfunda <- fondos
+  #colnames(dfunda) <- c("I","Fondo","TV","Emisora","Serie","Titulos","Monto")
+  #dfunda$Instrumento <- as.character(instrumento)
+  dfunda <- data.frame(fondos$I,fondos$Fondo,as.character(instrumento),fondos$Títulos,fondos$Costo.Total)
+  colnames(dfunda) <- c("I","Fondo","Instrumento","Titulos","Monto")
+  dfunda$Instrumento <- ifelse(dfunda$I!="R",as.character(dfunda$Instrumento),dfunda$Instrumento <- "REPORTO")
+  dfunda <- merge(dfunda,resumen,all = TRUE)
+  dfunda <- dfunda %>% group_by(Fondo, Instrumento) %>% summarise(sum(Titulos), sum(Monto))
+  colnames(dfunda) <- c("Fondo","Instrumento","Titulos","Monto")
+  efec <- filter(dfunda,Instrumento=="REPORTO")
+  indrep <- which(dfunda$Instrumento=="REPORTO")
+  dfunda <- dfunda[-indrep,]
   
   #Porcentajes de los instrumentos y dias por vencer
   perc <- c()
