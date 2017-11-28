@@ -423,7 +423,7 @@ function(input, output, session) {
  dfunda2$Titulos <- comma(dfunda$Titulos)
  dfunda2$Monto <- paste0("$", formatC(as.numeric(dfunda$Monto),format="f", digits=2, big.mark=","))
  dfunda2$Porcentaje <- paste0(formatC(as.numeric(dfunda$Porcentaje*100),format="f", digits=2, big.mark=","),"%")
- e <- filter(efec,Instrumento=="EFECTIVO")
+ e <- filter(dfunda,Instrumento=="EFECTIVO")
   
   #Data frame nueva foto Fondos
   vals$fundb <- c()
@@ -580,7 +580,7 @@ function(input, output, session) {
     fundb2$Monto <- paste0("$", formatC(as.numeric(fundb2$Monto),format="f", digits=2, big.mark=","))
     fundb2$Porcentaje <- paste0(formatC(as.numeric(fundb2$Porcentaje*100),format="f", digits=2, big.mark=","),"%")
     
-    if(vals$ValuesAtRisk ==TRUE)
+    if(vals$ValuesAtRisk == TRUE)
       output$fundd = DT::renderDataTable({subset(fundb2,Fondo %in% input$fondo)},rownames=FALSE,
                                        options = list(searching = FALSE, paging = FALSE))
     else
@@ -618,6 +618,8 @@ function(input, output, session) {
       vardes <- paste0(round(valuesdes$VaR*100,digits=2),"%")
       cvardes <- paste0(round(valuesdes$CVaR*100,digits=2),"%")
       metricsd <- data.frame(t(c(Fondo=selected_fund,Duracion=durdes,Convexidad=convexdes,VaR=vardes,CVaR=cvardes)))
+      
+      print.default(metricsd)
       
     } else {
       
@@ -855,8 +857,5 @@ function(input, output, session) {
  output$indd = DT::renderDataTable({subset(dfindd(),Fondo %in% input$fondo)},options = list(searching = FALSE, paging = FALSE))
  output$inddx=renderPrint(input$indd_rows_selected)
  output$warn = DT::renderDataTable({subset(warnings(),Fondo %in% input$fondo)},options = list(searching = FALSE, paging = FALSE))
- output$indd = DT::renderDataTable({subset(dfindd(),Fondo %in% input$show_vars)},options = list(searching = FALSE, paging = FALSE))
- output$inddx=renderPrint(input$indd_rows_selected)
- output$warn = DT::renderDataTable({subset(warnings(),Fondo %in% input$show_vars)},options = list(searching = FALSE, paging = FALSE))
  output$mensaje = renderPrint(msj)
 }
