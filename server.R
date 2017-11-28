@@ -16,14 +16,16 @@ options(scipen = 999)
 info_diaria <- read.csv("//192.168.0.223/CIFONDOS/Instrumentos.csv",header=TRUE,stringsAsFactors = FALSE)
 #Fondos
 fondos <- read_excel("//192.168.0.223/CIFONDOS/Fondos.xlsx")
-colnames(fondos) <- c("I","Fondo","TV","Emisora","Serie","Títulos","Costo.Total","Comparable")
+colnames(fondos) <- c("I","Fondo","TV","Emisora","Serie","Títulos","Costo.Total")
 fondos[is.na(fondos)] <- ""
 fondos$Títulos <- as.numeric(as.character(fondos$Títulos))
 fondos$Costo.Total <- as.numeric(as.character(fondos$Costo.Total))
 fondos <- fondos[!(fondos$Emisora == "CASITA"),]
+
 #Comparables de los fondos
-comparables <- data.frame(id=paste0(fondos$TV,"-",fondos$Emisora,"-",fondos$Serie),Comparable=fondos$Comparable)
-fondos$Comparable <-  NULL
+#comparables <- data.frame(id=paste0(fondos$TV,"-",fondos$Emisora,"-",fondos$Serie),Comparable=fondos$Comparable)
+#fondos$Comparable <-  NULL
+
 #Mercados
 mercados <- read.csv("//192.168.0.223/CIFONDOS/mercados.csv",header=TRUE,stringsAsFactors = FALSE)
 #Restricciones de los fondos
