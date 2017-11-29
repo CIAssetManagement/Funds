@@ -5,20 +5,22 @@ library(dplyr)
 library(xts)
 library(quantmod)
 library(RMySQL)
-library(FundTools)
 library(scales)
 library(shinyjs)
 
 # Matando la notación científica
 options(scipen = 999)
 
+#Corriendo las funciones
+source("funciones.R",local=TRUE)
+
 #Instrumentos
-info_diaria <- read.csv("C:/Github/Funds/Instrumentos.csv",header=TRUE,stringsAsFactors = FALSE)
+info_diaria <- read.csv("Instrumentos.csv",header=TRUE,stringsAsFactors = FALSE)
 #Fondos
-fondos <- read_xlsx("C:/Github/Funds/Fondos.xlsx")
-colnames(fondos) <- c("I","Fondo","TV","Emisora","Serie","Títulos","Costo.Total")
+fondos <- read_xlsx("Fondos.xlsx")
+colnames(fondos) <- c("I","Fondo","TV","Emisora","Serie","Titulos","Costo.Total")
 fondos[is.na(fondos)] <- ""
-fondos$Títulos <- as.numeric(as.character(fondos$Títulos))
+fondos$Titulos <- as.numeric(as.character(fondos$Titulos))
 fondos$Costo.Total <- as.numeric(as.character(fondos$Costo.Total))
 fondos <- fondos[!(fondos$Emisora == "CASITA"),]
 
@@ -27,15 +29,15 @@ fondos <- fondos[!(fondos$Emisora == "CASITA"),]
 #fondos$Comparable <-  NULL
 
 #Mercados
-mercados <- read.csv("C:/Github/Funds/mercados.csv",header=TRUE,stringsAsFactors = FALSE)
+mercados <- read.csv("mercados.csv",header=TRUE,stringsAsFactors = FALSE)
 #Restricciones de los fondos
-maximo <- read_xlsx("C:/Github/Funds/limites.xlsx",sheet = "Maximo")
-minimo <- read_xlsx("C:/Github/Funds/limites.xlsx",sheet = "Minimo")
+maximo <- read_xlsx("limites.xlsx",sheet = "Maximo")
+minimo <- read_xlsx("limites.xlsx",sheet = "Minimo")
 #Dias festivos
-festivos <- read.csv("C:/Github/Funds/festivos.csv",header=TRUE,stringsAsFactors = FALSE)
+festivos <- read.csv("festivos.csv",header=TRUE,stringsAsFactors = FALSE)
 festivos$dias <- as.Date(festivos$dias,format="%d/%m/%Y")
 #Efectivo covaf
-resumen <- read.csv("C:/Github/Funds/Resumen_Operaciones.csv",header=TRUE)
+resumen <- read.csv("Resumen_Operaciones.csv",header=TRUE)
 namesfondos <- c("+CIBOLS", "+CIEQUS", "+CIGUB", "+CIGULP", "+CIGUMP", "+CIPLUS", "+CIUSD")
 resumen <-  unique(filter(resumen,descripcion %in% namesfondos ))
 resumen <- resumen %>% mutate(Monto= saldo+compras-ventas-cintermediario+vintermediario) %>% 
@@ -385,7 +387,7 @@ function(input, output, session) {
   #dfunda <- fondos
   #colnames(dfunda) <- c("I","Fondo","TV","Emisora","Serie","Titulos","Monto")
   #dfunda$Instrumento <- as.character(instrumento)
-  dfunda <- data.frame(fondos$I,fondos$Fondo,as.character(instrumento),fondos$Títulos,fondos$Costo.Total)
+  dfunda <- data.frame(fondos$I,fondos$Fondo,as.character(instrumento),fondos$Titulos,fondos$Costo.Total)
   colnames(dfunda) <- c("I","Fondo","Instrumento","Titulos","Monto")
   dfunda$Instrumento <- ifelse(dfunda$I!="R",as.character(dfunda$Instrumento),dfunda$Instrumento <- "REPORTO")
   dfunda <- merge(dfunda,resumen,all = TRUE)

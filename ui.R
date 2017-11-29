@@ -1,9 +1,10 @@
 library(shiny)
 library(shinyjs)
+library(readxl)
 
 #Fondos
 #Fondos
-fondos <- read_excel("C:/Github/Funds/Fondos.xlsx")
+fondos <- read_xlsx("Fondos.xlsx")
 namesfondos <- sort(as.character(unique(fondos$Fondo)))
 
 estilo <- "width: 90%; height:90%; position:relative; right:150px; color:#0163A5"
