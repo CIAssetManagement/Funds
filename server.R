@@ -13,9 +13,9 @@ library(shinyjs)
 options(scipen = 999)
 
 #Instrumentos
-info_diaria <- read.csv("//192.168.0.223/CIFONDOS/Instrumentos.csv",header=TRUE,stringsAsFactors = FALSE)
+info_diaria <- read.csv("C:/Github/Funds/Instrumentos.csv",header=TRUE,stringsAsFactors = FALSE)
 #Fondos
-fondos <- read_excel("//192.168.0.223/CIFONDOS/Fondos.xlsx")
+fondos <- read_xlsx("C:/Github/Funds/Fondos.xlsx")
 colnames(fondos) <- c("I","Fondo","TV","Emisora","Serie","Títulos","Costo.Total")
 fondos[is.na(fondos)] <- ""
 fondos$Títulos <- as.numeric(as.character(fondos$Títulos))
@@ -27,15 +27,15 @@ fondos <- fondos[!(fondos$Emisora == "CASITA"),]
 #fondos$Comparable <-  NULL
 
 #Mercados
-mercados <- read.csv("//192.168.0.223/CIFONDOS/mercados.csv",header=TRUE,stringsAsFactors = FALSE)
+mercados <- read.csv("C:/Github/Funds/mercados.csv",header=TRUE,stringsAsFactors = FALSE)
 #Restricciones de los fondos
-maximo <- read_excel("//192.168.0.223/CIFONDOS/limites.xlsx",sheet = "Maximo")
-minimo <- read_excel("//192.168.0.223/CIFONDOS/limites.xlsx",sheet = "Minimo")
+maximo <- read_excel("C:/Github/Funds/limites.xlsx",sheet = "Maximo")
+minimo <- read_excel("C:/Github/Funds/limites.xlsx",sheet = "Minimo")
 #Dias festivos
-festivos <- read.csv("//192.168.0.223/CIFONDOS/festivos.csv",header=TRUE,stringsAsFactors = FALSE)
+festivos <- read.csv("C:/Github/Funds/festivos.csv",header=TRUE,stringsAsFactors = FALSE)
 festivos$dias <- as.Date(festivos$dias,format="%d/%m/%Y")
 #Efectivo covaf
-resumen <- read.csv("//192.168.0.223/CIFONDOS/Resumen_Operaciones.csv",header=TRUE)
+resumen <- read.csv("C:/Github/Funds/Resumen_Operaciones.csv",header=TRUE)
 namesfondos <- c("+CIBOLS", "+CIEQUS", "+CIGUB", "+CIGULP", "+CIGUMP", "+CIPLUS", "+CIUSD")
 resumen <-  unique(filter(resumen,descripcion %in% namesfondos ))
 resumen <- resumen %>% mutate(Monto= saldo+compras-ventas-cintermediario+vintermediario) %>% 
@@ -618,8 +618,6 @@ function(input, output, session) {
       vardes <- paste0(round(valuesdes$VaR*100,digits=2),"%")
       cvardes <- paste0(round(valuesdes$CVaR*100,digits=2),"%")
       metricsd <- data.frame(t(c(Fondo=selected_fund,Duracion=durdes,Convexidad=convexdes,VaR=vardes,CVaR=cvardes)))
-      
-      print.default(metricsd)
       
     } else {
       
