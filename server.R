@@ -29,8 +29,8 @@ fondos <- fondos[!(fondos$Emisora == "CASITA"),]
 #Mercados
 mercados <- read.csv("C:/Github/Funds/mercados.csv",header=TRUE,stringsAsFactors = FALSE)
 #Restricciones de los fondos
-maximo <- read_excel("C:/Github/Funds/limites.xlsx",sheet = "Maximo")
-minimo <- read_excel("C:/Github/Funds/limites.xlsx",sheet = "Minimo")
+maximo <- read_xlsx("C:/Github/Funds/limites.xlsx",sheet = "Maximo")
+minimo <- read_xlsx("C:/Github/Funds/limites.xlsx",sheet = "Minimo")
 #Dias festivos
 festivos <- read.csv("C:/Github/Funds/festivos.csv",header=TRUE,stringsAsFactors = FALSE)
 festivos$dias <- as.Date(festivos$dias,format="%d/%m/%Y")
