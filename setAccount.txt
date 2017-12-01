@@ -1,3 +1,0 @@
-rsconnect::setAccountInfo(name='mautrejo',
-			  token='C1E07AF2E1F8C5AF1E3CBB78D3E45746',
-			  secret='<SECRET>')

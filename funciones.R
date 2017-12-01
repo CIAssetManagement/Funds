@@ -1,3 +1,7 @@
+library(dplyr)
+library(magrittr)
+library(tidyr)
+
 BondPrice <- function(mat,day,tcoupn,ytm,period=182){
   #ytm anualizado
   #tcoup as decimals
@@ -208,7 +212,7 @@ PortfolioConvexity <- function(date=Sys.Date()-1,instruments,weight){
 }
 
 get_prices <- function(fecha = NULL, id = NULL){
-  con <- DBI::dbConnect(drv=RMySQL::MySQL(),host="127.0.0.1",user="root", password="CIBANCO.00", dbname="mydb")
+  con <- DBI::dbConnect(drv=RMySQL::MySQL(),host="10.1.6.81",user="mau", password="CIBANCO.00", dbname="mydb")
   query <- paste("SELECT fecha, id, precio FROM prices")
   if(!is.null(fecha) | !is.null(id)) {
     query <- paste(query, "WHERE")
@@ -242,7 +246,7 @@ seq_Date <- function(fecha = NULL){
 }
 
 get_bonds <- function(id = NULL){
-  con <- DBI::dbConnect(drv=RMySQL::MySQL(),host="127.0.0.1",user="root", password="CIBANCO.00", dbname="mydb")
+  con <- DBI::dbConnect(drv=RMySQL::MySQL(),host="10.1.6.81",user="mau", password="CIBANCO.00", dbname="mydb")
   query <- paste("SELECT id,FechaEmision,FechaVencimiento,TasaCupon,TipoTasa,SobreTasa,Frecuencia FROM bonds ")
   if(!is.null(id)) {
     query <- paste0(query, " WHERE ", " id IN ('", paste(id, collapse="','"),"')")
@@ -265,7 +269,7 @@ RiskValues <- function(fecha,instruments,shares,type,confidence = 0.95,period=25
   correlation <- cor(rendimientos,use = "complete.obs")
   sigmap <- sqrt(as.vector(pesos*desv) %*% correlation %*% as.vector(t(pesos*desv)))
   if(type=="bonds"){
-    con <- DBI::dbConnect(drv=RMySQL::MySQL(),host="127.0.0.1",user="root", password="CIBANCO.00", dbname="mydb")
+    con <- DBI::dbConnect(drv=RMySQL::MySQL(),host="10.1.6.81",user="mau", password="CIBANCO.00", dbname="mydb")
     fechas <- format(fechas,'%m/%d/%Y')
     query <- paste0("SELECT nivel FROM nodos WHERE id = 'CETES-28' AND fecha in ('",paste(fechas, collapse = "','"),
                     "')")

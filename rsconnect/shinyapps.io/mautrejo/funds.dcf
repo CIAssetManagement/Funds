@@ -5,6 +5,6 @@ account: mautrejo
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 241703
-bundleId: 1104685
+bundleId: 1104718
 url: https://mautrejo.shinyapps.io/funds/
-when: 1511979473.68995
+when: 1511980463.21983
