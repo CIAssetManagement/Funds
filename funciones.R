@@ -286,3 +286,11 @@ RiskValues <- function(fecha,instruments,shares,type,confidence = 0.95,period=25
   values <- data.frame(Days=length(precios[,1]),VaR=valuea,CVaR=cvaluea)
   return(values)
 }
+
+Grade2Number <- function(note){
+  con <- DBI::dbConnect(drv=RMySQL::MySQL(),host="10.1.6.81",user="mau", password="CIBANCO.00", dbname="mydb")
+  query <- paste0("SELECT Calificadora,Valor FROM calificaciones WHERE Calificadora IN ('",paste(note,collapse = "','"),"')")
+  number <- DBI::dbGetQuery(con, query)
+  DBI::dbDisconnect(con)
+  return(number)
+}

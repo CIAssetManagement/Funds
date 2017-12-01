@@ -1,10 +1,11 @@
 library(shiny)
 library(shinyjs)
-library(readxl)
+library(rdrop2)
 
 #Fondos
 #Fondos
-fondos <- read_xlsx("Fondos.xlsx")
+fondos <- drop_read_csv('Carpeta del equipo CIEstrategias/Fondos.csv',stringsAsFactors = FALSE)
+fondos$Fondo <- gsub("'","",fondos$Fondo)
 namesfondos <- sort(as.character(unique(fondos$Fondo)))
 
 estilo <- "width: 90%; height:90%; position:relative; right:150px; color:#0163A5"

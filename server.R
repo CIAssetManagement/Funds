@@ -1,4 +1,4 @@
-library(readxl)
+library(rdrop2)
 library(shiny)
 library(DT)
 library(dplyr)
@@ -15,9 +15,12 @@ options(scipen = 999)
 source("funciones.R",local=TRUE)
 
 #Instrumentos
-info_diaria <- read.csv("Instrumentos.csv",header=TRUE,stringsAsFactors = FALSE)
+info_diaria <- drop_read_csv('Carpeta del equipo CIEstrategias/Instrumentos.csv',stringsAsFactors = FALSE)
 #Fondos
-fondos <- read_xlsx("Fondos.xlsx")
+fondos <- drop_read_csv('Carpeta del equipo CIEstrategias/Fondos.csv',stringsAsFactors = FALSE)
+fondos$X <-  NULL
+fondos$Fondo <- gsub("'","",fondos$Fondo)
+fondos$Serie <- gsub("'","",fondos$Serie)
 colnames(fondos) <- c("I","Fondo","TV","Emisora","Serie","Titulos","Costo.Total")
 fondos[is.na(fondos)] <- ""
 fondos$Titulos <- as.numeric(as.character(fondos$Titulos))
@@ -29,16 +32,18 @@ fondos <- fondos[!(fondos$Emisora == "CASITA"),]
 #fondos$Comparable <-  NULL
 
 #Mercados
-mercados <- read.csv("mercados.csv",header=TRUE,stringsAsFactors = FALSE)
+mercados <- drop_read_csv('Carpeta del equipo CIEstrategias/mercados.csv',header=TRUE,stringsAsFactors = FALSE)
 #Restricciones de los fondos
-maximo <- read_xlsx("limites.xlsx",sheet = "Maximo")
-minimo <- read_xlsx("limites.xlsx",sheet = "Minimo")
+maximo <- drop_read_csv('Carpeta del equipo CIEstrategias/limitesmax.csv',header=TRUE)
+minimo <- drop_read_csv('Carpeta del equipo CIEstrategias/limitesmin.csv',header=TRUE)
+colnames(minimo) <- c('limiteminimo','+CIGUB','+CIGUMP','+CIGULP','+CIPLUS','+CIBOLS','+CIEQUS','+CIUSD')
+colnames(maximo) <- c('limitemaximo','+CIGUB','+CIGUMP','+CIGULP','+CIPLUS','+CIBOLS','+CIEQUS','+CIUSD')
 #Dias festivos
-festivos <- read.csv("festivos.csv",header=TRUE,stringsAsFactors = FALSE)
+festivos <- drop_read_csv('Carpeta del equipo CIEstrategias/festivos.csv',header=TRUE,stringsAsFactors = FALSE)
 festivos$dias <- as.Date(festivos$dias,format="%d/%m/%Y")
 #Efectivo covaf
-resumen <- read.csv("Resumen_Operaciones.csv",header=TRUE)
-namesfondos <- c("+CIBOLS", "+CIEQUS", "+CIGUB", "+CIGULP", "+CIGUMP", "+CIPLUS", "+CIUSD")
+resumen <- drop_read_csv('Carpeta del equipo CIEstrategias/Resumen_Operaciones.csv',header=TRUE)
+namesfondos <- sort(as.character(unique(fondos$Fondo)))
 resumen <-  unique(filter(resumen,descripcion %in% namesfondos ))
 resumen <- resumen %>% mutate(Monto= saldo+compras-ventas-cintermediario+vintermediario) %>% 
                        mutate(Instrumento = "EFECTIVO") %>% mutate(Titulos = 0) %>% 
@@ -83,7 +88,7 @@ tipovalorventa <- function(fondo){
   indices <- ifelse(indices1 == TRUE, indices2,indices1)
   tipo <- fondos$TV[indices]
   #Eliminando los tipos CHD (chequeras en dólares) ya que no se pueden vender.
-  tipo <- sort(tipo[which(tipo != "CHD" & tipo != "")])
+  tipo <- sort(tipo[which(tipo != "CHD" & tipo != " ")])
   return(tipo)
 }
 
@@ -379,11 +384,11 @@ function(input, output, session) {
    })
    
   #Efectivo ciusd
-  ciusd <- resumen[resumen$Fondo == "+CIUSD",]
+  #ciusd <- resumen[resumen$Fondo == "+CIUSD",]
   
   #Data frame foto actual Fondos
   instrumento <- paste0(fondos$TV,"-",fondos$Emisora,"-",fondos$Serie)
-  instrumento <- ifelse(instrumento == "-TOTALES-","TOTALES",instrumento)
+  instrumento <- ifelse(instrumento == " -TOTALES- ","TOTALES",instrumento)
   #dfunda <- fondos
   #colnames(dfunda) <- c("I","Fondo","TV","Emisora","Serie","Titulos","Monto")
   #dfunda$Instrumento <- as.character(instrumento)
@@ -687,7 +692,7 @@ function(input, output, session) {
       else 
         facilr <- sum(funddb$Porcentaje[indicesfr11],fundb$Porcentaje[indicesfr3],na.rm = TRUE)
         
-    error <- ifelse(facilr < as.numeric(minimo[rowindex,colindex]),
+    error <- ifelse(facilr < as.numeric(as.character(minimo[rowindex,colindex])),
                     paste0("Porcentaje de fácil realización por debajo del límite requerido de: ",
                            minimo[rowindex,colindex]),NA)
     advert <- c(advert,error)
@@ -696,7 +701,7 @@ function(input, output, session) {
       rowindex <- which(minimo$limiteminimo == "venc")
       indicesvenc <- as.numeric(funddb$DiasxVencer) < 93
       venc <- sum(funddb$Porcentaje[indicesvenc],na.rm = TRUE)
-      error <- ifelse(venc < as.numeric(minimo[rowindex,colindex]),
+      error <- ifelse(venc < as.numeric(as.character(minimo[rowindex,colindex])),
                       paste0("Porcentaje de emisoras con vencimiento menor a 3 meses por debajo del límite 
                              requerido de: ",
                              minimo[rowindex,colindex]),NA)
@@ -709,7 +714,7 @@ function(input, output, session) {
     rowindex <- which(minimo$limiteminimo == "gubernacional")
     indicesgn <- funddb$TV %in% mercados$gubernacional
     gn <- sum(funddb$Porcentaje[indicesgn],funddb$Porcentaje[indexe])
-    error <- ifelse(gn < as.numeric(minimo[rowindex,colindex]),
+    error <- ifelse(gn < as.numeric(as.character(minimo[rowindex,colindex])),
                     paste0("Porcentaje en valores gubernamentales nacionales por debajo del límite requerido de: ",
                            minimo[rowindex,colindex]),NA)
     advert <- c(advert,error)
@@ -719,7 +724,7 @@ function(input, output, session) {
     indicesgi <- funddb$TV %in% mercados$guberinternacional
     gi <- sum(funddb$Porcentaje[indicesgi])
     gi <- ifelse(is.na(gi)==TRUE,0,gi)
-    error <- ifelse(gi > as.numeric(maximo[rowindex,colindex]),
+    error <- ifelse(gi > as.numeric(as.character(maximo[rowindex,colindex])),
                     paste0("Porcentaje en valores gubernamentales en el extranjero por encima del 
                            límite requerido de: ",
                            maximo[rowindex,colindex]),NA)
@@ -729,7 +734,7 @@ function(input, output, session) {
     rowindex <- which(minimo$limiteminimo == "chd")
     indicesch <- funddb$TV %in% "CHD"
     chd <- sum(funddb$Porcentaje[indicesch])
-    error <- ifelse(chd < as.numeric(minimo[rowindex,colindex]),
+    error <- ifelse(chd < as.numeric(as.character(minimo[rowindex,colindex])),
                     paste0("Porcentaje en chequera por debajo del límite requerido de: ",
                            minimo[rowindex,colindex]),NA)
     advert <- c(advert,error) 
@@ -738,7 +743,7 @@ function(input, output, session) {
     rowindex <- which(minimo$limiteminimo == "sic")
     indicessic <- funddb$TV %in% mercados$sic
     sic <- sum(funddb$Porcentaje[indicessic])
-    error <- ifelse(sic < as.numeric(minimo[rowindex,colindex]),
+    error <- ifelse(sic < as.numeric(as.character(minimo[rowindex,colindex])),
                     paste0("Porcentaje en SIC por debajo del límite requerido de: ",
                            minimo[rowindex,colindex]),NA)
     advert <- c(advert,error)
@@ -747,7 +752,7 @@ function(input, output, session) {
     rowindex <- which(minimo$limiteminimo == "deudamxn")
     indicesdmxn <- funddb$TV %in% mercados$deudamxn
     deudamxn <- sum(funddb$Porcentaje[indicesdmxn])
-    error <- ifelse(deudamxn < as.numeric(minimo[rowindex,colindex]),
+    error <- ifelse(deudamxn < as.numeric(as.character(minimo[rowindex,colindex])),
                     paste0("Porcentaje de deuda en pesos por debajo del límite requerido de: ",
                            minimo[rowindex,colindex]),NA)
     advert <- c(advert,error)
@@ -756,7 +761,7 @@ function(input, output, session) {
     rowindex <- which(maximo$limitemaximo == "fibras")
     indicesfib <- funddb$TV %in% mercados$fibras
     fibras <- sum(funddb$Porcentaje[indicesfib])
-    error <- ifelse(fibras > as.numeric(maximo[rowindex,colindex]),
+    error <- ifelse(fibras > as.numeric(as.character(maximo[rowindex,colindex])),
                     paste0("Porcentaje en FIBRAS por encima del límite requerido de: ",
                            maximo[rowindex,colindex]),NA)
     advert <- c(advert,error)
@@ -766,7 +771,7 @@ function(input, output, session) {
     ud <- with(funddb, substring(Instrumento, nchar(Instrumento)))
     indicesudis <- ifelse(ud == "U" | funddb$TV == "S",TRUE,FALSE)
     udis <- sum(funddb$Porcentaje[indicesudis])
-    error <- ifelse(udis > as.numeric(maximo[rowindex,colindex]),
+    error <- ifelse(udis > as.numeric(as.character(maximo[rowindex,colindex])),
                     paste0("Porcentaje en UDI's por encima del límite requerido de: ",
                            maximo[rowindex,colindex]),NA)
     advert <- c(advert,error)
@@ -775,7 +780,7 @@ function(input, output, session) {
     rowindex <- which(maximo$limitemaximo == "etfs")
     indicesetf <- funddb$TV %in% mercados$etf
     etf <- sum(funddb$Porcentaje[indicesetf])
-    error <- ifelse(etf > as.numeric(maximo[rowindex,colindex]),
+    error <- ifelse(etf > as.numeric(as.character(maximo[rowindex,colindex])),
                     paste0("Porcentaje en ETF's por encima del límite requerido de: ",
                            maximo[rowindex,colindex]),NA)
     advert <- c(advert,error)
@@ -785,12 +790,14 @@ function(input, output, session) {
       rowindex <- which(minimo$limiteminimo == "duracion")
       inst <- funddb$Instrumento
       pes <- funddb$Porcentaje
+      
       duracion <- round(PortfolioDuration(diah(Sys.Date()-1),inst,pes)*360,digits=0)
-      if(duracion < as.numeric(minimo[rowindex,colindex])){
+      
+      if(duracion < as.numeric(as.character(minimo[rowindex,colindex]))){
         error <- paste0("Duración por debajo del límite requerido de: ",minimo[rowindex,colindex])
         advert <- c(advert,error)
       }
-      if(duracion > as.numeric(maximo[rowindex,colindex])){
+      if(duracion > as.numeric(as.character(maximo[rowindex,colindex]))){
         error <- paste0("Duración por encima del límite requerido de: ", maximo[rowindex,colindex])
         advert <- c(advert,error)
       }
@@ -803,7 +810,7 @@ function(input, output, session) {
       valuea <- abs(RiskValues(diah(Sys.Date()-1),instrumentos,titulos,"bonds")$VaR)
     else
       valuea <- abs(RiskValues(diah(Sys.Date()-1),instrumentos,titulos,"stocks")$VaR)
-    error <- ifelse(valuea > as.numeric(maximo[rowindex,colindex]),
+    error <- ifelse(valuea > as.numeric(as.character(maximo[rowindex,colindex])),
                     paste0("VaR superior al límite requerido de: ",
                            round(maximo[rowindex,colindex]*100,digits=2),"%"),NA)
     advert <- c(advert,error)
