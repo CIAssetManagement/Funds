@@ -5,9 +5,9 @@ account: mautrejo
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 241703
-bundleId: 1117354
+bundleId: 1117427
 url: https://mautrejo.shinyapps.io/funds/
-when: 1512505065.03387
+when: 1512507800.42154
 asMultiple: FALSE
 asStatic: FALSE
 ignoredFiles: .RData|Curva_cetes.csv|DICI_Fondos.docx|festivos.csv|Fondos.csv|Hola|Instrumentos.csv|limites.xlsx|mercados.csv|README.md|Resumen_Operaciones.csv
