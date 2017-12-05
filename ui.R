@@ -10,9 +10,9 @@ namesfondos <- sort(as.character(unique(fondos$Fondo)))
 
 estilo <- "width: 90%; height:90%; position:relative; right:150px; color:#0163A5"
 estilor <- "width: 103%; position:relative; right:170px; color:#0163A5"
-estilo1 <- "width: 100%; height:90%; position:relative; right:100px; color:#0163A5"
-estilor1 <- "width: 103%; position:relative; right:100px; color:#0163A5"
-estilow <- "position:relative; right:100px; color:#0163A5"
+estilo1 <- "width: 100%; height:90%; position:relative; right:625%; color:#0163A5"
+estilor1 <- "width: 103%; position:relative; right:625%; color:#0163A5"
+estilow <- "position:relative; right:625%; color:#0163A5"
 
 fluidPage(
   useShinyjs(),
