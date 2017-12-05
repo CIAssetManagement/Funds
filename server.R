@@ -1,178 +1,5 @@
-library(rdrop2)
-library(shiny)
-library(DT)
-library(dplyr)
-library(xts)
-library(quantmod)
-library(RMySQL)
-library(scales)
-library(shinyjs)
-
-# Matando la notación científica
-options(scipen = 999)
-
-#Corriendo las funciones
-source("funciones.R",local=TRUE)
-
-#Instrumentos
-info_diaria <- drop_read_csv('Carpeta del equipo CIEstrategias/Instrumentos.csv',stringsAsFactors = FALSE)
-#Fondos
-fondos <- drop_read_csv('Carpeta del equipo CIEstrategias/Fondos.csv',stringsAsFactors = FALSE)
-fondos$X <-  NULL
-fondos$Fondo <- gsub("'","",fondos$Fondo)
-fondos$Serie <- gsub("'","",fondos$Serie)
-colnames(fondos) <- c("I","Fondo","TV","Emisora","Serie","Titulos","Costo.Total")
-fondos[is.na(fondos)] <- ""
-fondos$Titulos <- as.numeric(as.character(fondos$Titulos))
-fondos$Costo.Total <- as.numeric(as.character(fondos$Costo.Total))
-fondos <- fondos[!(fondos$Emisora == "CASITA"),]
-
-#Comparables de los fondos
-#comparables <- data.frame(id=paste0(fondos$TV,"-",fondos$Emisora,"-",fondos$Serie),Comparable=fondos$Comparable)
-#fondos$Comparable <-  NULL
-
-#Mercados
-mercados <- drop_read_csv('Carpeta del equipo CIEstrategias/mercados.csv',header=TRUE,stringsAsFactors = FALSE)
-#Restricciones de los fondos
-maximo <- drop_read_csv('Carpeta del equipo CIEstrategias/limitesmax.csv',header=TRUE)
-minimo <- drop_read_csv('Carpeta del equipo CIEstrategias/limitesmin.csv',header=TRUE)
-colnames(minimo) <- c('limiteminimo','+CIGUB','+CIGUMP','+CIGULP','+CIPLUS','+CIBOLS','+CIEQUS','+CIUSD')
-colnames(maximo) <- c('limitemaximo','+CIGUB','+CIGUMP','+CIGULP','+CIPLUS','+CIBOLS','+CIEQUS','+CIUSD')
-#Dias festivos
-festivos <- drop_read_csv('Carpeta del equipo CIEstrategias/festivos.csv',header=TRUE,stringsAsFactors = FALSE)
-festivos$dias <- as.Date(festivos$dias,format="%d/%m/%Y")
-#Efectivo covaf
-resumen <- drop_read_csv('Carpeta del equipo CIEstrategias/Resumen_Operaciones.csv',header=TRUE)
-namesfondos <- sort(as.character(unique(fondos$Fondo)))
-resumen <-  unique(filter(resumen,descripcion %in% namesfondos ))
-resumen <- resumen %>% mutate(Monto= saldo+compras-ventas-cintermediario+vintermediario) %>% 
-                       mutate(Instrumento = "EFECTIVO") %>% mutate(Titulos = 0) %>% 
-                       select(tipo,descripcion,Instrumento,Titulos,Monto)
-colnames(resumen) <- c("I","Fondo","Instrumento","Titulos","Monto")
-
-#Dia hábil
-diah <-  function(fecha){
-  fechabase0 <- as.Date("2017-08-06")
-  entero <- as.integer(fecha - fechabase0 )
-  if(entero %% 7 == 6 | entero %% 7 == 0){
-    return(diah(fecha-1))
-  } else {
-    if(fecha %in% festivos$dia){
-      return(diah(fecha-1))
-    } else {return(fecha)}
-    }
-}
-
-#Funcion que da las calificaciones de los instrumentos en los que puede invertir cada fondo
-calificaciones <- function(fondo,tv){
-  valores <- unique(c(mercados$revision))
-  valores <- valores[ifelse(valores == "",FALSE,TRUE)]
-  if(tv %in% valores){
-    calificacion <- switch(fondo,
-                           "+CIGUB"=c("AAA"),
-                           "+CIGUMP"=c("AAA"),
-                           "+CIGULP"=c("AAA"),
-                           "+CIEQUS"=c("AAA","AA+","AA","AA-","A+","A"),
-                           "+CIBOLS"=c("AAA","AA+","AA","AA-","A+","A"),
-                           "+CIPLUS"=c("AAA","AA+","AA","AA-","A+","A"),
-                           "+CIUSD"=c("AAA","AA+","AA","AA-","A+","A"))
-  } else {
-    calificacion <- c("-")
-  }
-  return(calificacion)
-}
-#Lista de instrumentos que los fondos pueden vender.
-tipovalorventa <- function(fondo){
-  indices1 <- fondos$Fondo %in% fondo
-  indices2 <- !(fondos$I %in% "R")
-  indices <- ifelse(indices1 == TRUE, indices2,indices1)
-  tipo <- fondos$TV[indices]
-  #Eliminando los tipos CHD (chequeras en dólares) ya que no se pueden vender.
-  tipo <- sort(tipo[which(tipo != "CHD" & tipo != " ")])
-  return(tipo)
-}
-
-emisoraventa <- function(fondo,tv){
-  fondo <- fondos$Fondo %in% fondo
-  tipo <- fondos$TV %in% tv
-  indices <- ifelse(fondo == TRUE,tipo,fondo)
-  emisora <- sort(fondos$Emisora[indices])
-  return(emisora)
-}
-
-instrumentoventa <- function(fondo,tv,emisora){
-  fondo <- fondos$Fondo %in% fondo
-  tipo <- fondos$TV %in% tv
-  emisora <- fondos$Emisora %in% emisora
-  indices <- ifelse(fondo == TRUE,tipo,fondo)
-  indices <- ifelse(indices == TRUE, emisora,indices)
-  
-  tip <- fondos$TV[indices]
-  emi <- fondos$Emisora[indices]
-  ser <- fondos$Serie[indices]
-  instrumento <- sort(paste0(tip,"-",emi,"-",ser))
-  return(instrumento)
-}
-
-#Lista de instrumentos que los fondos pueden comprar.
-tipovalorcompra <- function(nombre){
-  
-  cigub <- info_diaria$TipoValor %in% mercados$cigub
-  cigump <- info_diaria$TipoValor %in% mercados$cigump
-  cigulp <- info_diaria$TipoValor %in% mercados$cigulp
-  ciplus <- info_diaria$TipoValor %in% mercados$ciplus
-  cibols <- info_diaria$TipoValor %in% mercados$cibols
-  ciequs <- info_diaria$TipoValor %in% mercados$ciequs
-  ciusd <- info_diaria$TipoValor %in% mercados$ciusd
-  
-  valores <- switch(nombre,
-                    "+CIGUB"={info_diaria$TipoValor[cigub]},
-                    "+CIGUMP"={info_diaria$TipoValor[cigump]},
-                    "+CIGULP"={info_diaria$TipoValor[cigulp]},
-                    "+CIPLUS"={info_diaria$TipoValor[ciplus]},
-                    "+CIBOLS"={info_diaria$TipoValor[cibols]},
-                    "+CIUSD"={info_diaria$TipoValor[ciusd]},
-                    "+CIEQUS"={info_diaria$TipoValor[ciequs]}
-  )
-  
-  valores <- sort(na.omit(unique(valores)))
-  if(nombre=="+CIPLUS"){
-    valor <- valores[2]
-    valores[2] <- valores[1]
-    valores[1] <- valor
-  }
-  return(valores)
-}
-
-emisoracompra <- function(nombre,tv){
-  #Posibles instrumentos
-  calificacion <- calificaciones(nombre,tv)
-  #Double match
-  indicei <- info_diaria$TipoValor %in% tv
-  indicec <- info_diaria$Calificacion %in% calificacion
-  indices <- ifelse(indicei==TRUE,indicec,indicei)
-  #Instrumentos
-  instrumento <- sort(info_diaria$Emisora[indices])
-  
-  return(instrumento)
-}
-
-instrumentocompra <- function(nombre,tv,emisora){
-  #Posibles instrumentos
-  calificacion <- calificaciones(nombre,tv)
-  #Triple match
-  indicet <- info_diaria$TipoValor %in% tv
-  indicee <- info_diaria$Emisora %in% emisora
-  indicec <- info_diaria$Calificacion %in% calificacion
-  indicete <- ifelse(indicet == TRUE,indicee,indicet)
-  indices <- ifelse(indicete == TRUE,indicec,indicete)
-  #Instrumentos
-  instrumento <- sort(info_diaria$id[indices])
-  return(instrumento)
-}
-
 #Función servidor
-function(input, output, session) {
+server <- function(input, output, session) {
   
   #Seleccion del Tipo de Valor
   observe({
@@ -851,11 +678,14 @@ function(input, output, session) {
   deri <- paste0("No se puede invertir en derivados, valores estructurados, certificados bursátiles fiduciarios o respaldados por activos")
   msj <- c(cv,report,deri)
   
-  output$ventav <- DT::renderDataTable({subset(vals$rowdatav,Fondo %in% input$fondo)},
-                                      options = list(searching = FALSE, paging = FALSE))
- 
-  output$comprac <- DT::renderDataTable({subset(vals$rowdatac,Fondo %in% input$fondo)},
-                                       options = list(searching = FALSE, paging = FALSE))
+  #output$ventav <- DT::renderDataTable({subset(vals$rowdatav,Fondo %in% input$fondo)},
+  #                                    options = list(searching = FALSE, paging = FALSE))
+  output$ventav <- DT::renderDataTable(vals$rowdatav,options = list(searching = FALSE, paging = FALSE))
+  
+  #output$comprac <- DT::renderDataTable({subset(vals$rowdatac,Fondo %in% input$fondo)},
+  #                                     options = list(searching = FALSE, paging = FALSE))
+  output$ventac <- DT::renderDataTable(vals$rowdatac,options = list(searching = FALSE, paging = FALSE))
+  
   
   options(DT.options = list(pageLength = 100))
   output$funda = DT::renderDataTable({subset(dfunda2,Fondo %in% input$fondo)},rownames=FALSE,
