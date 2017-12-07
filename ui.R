@@ -63,34 +63,34 @@ ui <- fluidPage(
     div(style="align:left; position:relative; top:10px; color: #0878C2;",DT::dataTableOutput('comprac'),
     actionButton("delc","Eliminar")),
     div(style="left:100px; position:relative; top:15px;",
-    actionButton("summit","Cargar",width = "200px"))),
+    actionButton("summit","Cargar",width = "200px")))
   
 
-  fluidRow(
-    fluidRow(column(7,h2("Warnings",style = paste0("font-family: 'Roboto Slab', serif;
-                 font-weight: 500; line-height: 1.1; color: #0878C2; ",estilow)),
-                    hr(style=estilow),
-                    div(DT::dataTableOutput("warn"),style=estilow)),
-    column(4,h2("Fondos",style = paste0("font-family: 'Roboto Slab', serif;
-                 font-weight: 500; line-height: 1.1; color: #0878C2; ",estilo)),
-           hr(style=estilor),
-    div(DT::dataTableOutput("funda"), style=estilo),
-    h2("Medidas de Riesgo",style = paste0("font-family: 'Roboto Slab', serif;
-                 font-weight: 500; line-height: 1.1;color: #0878C2; ",estilo)),
-    hr(style=estilor),
-    div(DT::dataTableOutput("inda"),style=estilo)),
-    
-  fluidRow(
-    column(3,h2("Fondos Operaciones",style = paste0("font-family: 'Roboto Slab', serif;
-                 font-weight: 500; line-height: 1.1; color: #0878C2; ",estilo1)),
-           hr(style=estilor1),
-    div(DT::dataTableOutput("fundd"), style=estilo1),
-    h2("Medidas de Riesgo Simulación",style = paste0("font-family: 'Roboto Slab', serif;
-                 font-weight: 500; line-height: 1.1;color: #0878C2; ",estilo1)),
-    hr(style=estilor1),
-    div(DT::dataTableOutput("indd"),style=estilo1))),
-    fluidRow(column(7,hr(style="position:relative; left:500px;"),
-                    div(style="position:relative; left:500px;",verbatimTextOutput('mensaje')))))
-  )
+  # fluidRow(
+  #   fluidRow(column(7,h2("Warnings",style = paste0("font-family: 'Roboto Slab', serif;
+  #                font-weight: 500; line-height: 1.1; color: #0878C2; ",estilow)),
+  #                   hr(style=estilow),
+  #                   div(DT::dataTableOutput("warn"),style=estilow)),
+  #   column(4,h2("Fondos",style = paste0("font-family: 'Roboto Slab', serif;
+  #                font-weight: 500; line-height: 1.1; color: #0878C2; ",estilo)),
+  #          hr(style=estilor),
+  #   div(DT::dataTableOutput("funda"), style=estilo),
+  #   h2("Medidas de Riesgo",style = paste0("font-family: 'Roboto Slab', serif;
+  #                font-weight: 500; line-height: 1.1;color: #0878C2; ",estilo)),
+  #   hr(style=estilor),
+  #   div(DT::dataTableOutput("inda"),style=estilo)),
+  #   
+  # fluidRow(
+  #   column(3,h2("Fondos Operaciones",style = paste0("font-family: 'Roboto Slab', serif;
+  #                font-weight: 500; line-height: 1.1; color: #0878C2; ",estilo1)),
+  #          hr(style=estilor1),
+  #   div(DT::dataTableOutput("fundd"), style=estilo1),
+  #   h2("Medidas de Riesgo Simulación",style = paste0("font-family: 'Roboto Slab', serif;
+  #                font-weight: 500; line-height: 1.1;color: #0878C2; ",estilo1)),
+  #   hr(style=estilor1),
+  #   div(DT::dataTableOutput("indd"),style=estilo1))),
+  #   fluidRow(column(7,hr(style="position:relative; left:500px;"),
+  #                   div(style="position:relative; left:500px;",verbatimTextOutput('mensaje')))))
+  # )
 )
 

@@ -3,10 +3,8 @@ library(shiny)
 library(DT)
 library(dplyr)
 library(RMySQL)
-library(DBI)
 library(scales)
 library(shinyjs)
-library(magrittr)
 library(tidyr)
 
 # Matando la notación científica
@@ -52,6 +50,9 @@ resumen <- resumen %>% mutate(Monto= saldo+compras-ventas-cintermediario+vinterm
   mutate(Instrumento = "EFECTIVO") %>% mutate(Titulos = 0) %>% 
   select(tipo,descripcion,Instrumento,Titulos,Monto)
 colnames(resumen) <- c("I","Fondo","Instrumento","Titulos","Monto")
+
+#Cerrando las conexiones
+lapply(DBI::dbListConnections(DBI::dbDriver(drvName = 'MySQL')),DBI::dbDisconnect)
 
 #Dia hábil
 diah <-  function(fecha){
@@ -385,7 +386,7 @@ PortfolioConvexity <- function(date=Sys.Date()-1,instruments,weight){
 }
 
 get_prices <- function(fecha = NULL, id = NULL){
-  con <- DBI::dbConnect(drv=RMySQL::MySQL(),host="10.1.6.81",user="mau", password="CIBANCO.00", dbname="mydb")
+  con <- DBI::dbConnect(drv=RMySQL::MySQL(),host="10.1.6.81",user="shinyapp", password="CIBANCO.00", dbname="mydb",port=3306)
   query <- paste("SELECT fecha, id, precio FROM prices")
   if(!is.null(fecha) | !is.null(id)) {
     query <- paste(query, "WHERE")
@@ -399,13 +400,14 @@ get_prices <- function(fecha = NULL, id = NULL){
       query <- paste0(query, " id IN ('", paste(id, collapse="','"), "')")
     }
   }
-  precios <- DBI::dbGetQuery(con, query)
+  precios <- dbGetQuery(con, query)
   DBI::dbDisconnect(con)
   precios %>%
     #as date
     mutate(fecha = as.Date(fecha)) %>%
     #repo
-    tidyr::spread(id, precio) %>%
+    spread(id, precio) %>%
+    
     data.frame(check.names = FALSE)
 }
 
@@ -419,12 +421,12 @@ seq_Date <- function(fecha = NULL){
 }
 
 get_bonds <- function(id = NULL){
-  con <- DBI::dbConnect(drv=RMySQL::MySQL(),host="10.1.6.81",user="mau", password="CIBANCO.00", dbname="mydb")
+  con <- DBI::dbConnect(drv=RMySQL::MySQL(),host="10.1.6.81",user="shinyapp", password="CIBANCO.00", dbname="mydb",port=3306)
   query <- paste("SELECT id,FechaEmision,FechaVencimiento,TasaCupon,TipoTasa,SobreTasa,Frecuencia FROM bonds ")
   if(!is.null(id)) {
     query <- paste0(query, " WHERE ", " id IN ('", paste(id, collapse="','"),"')")
   }
-  datos <- DBI::dbGetQuery(con, query)
+  datos <- dbGetQuery(con, query)
   DBI::dbDisconnect(con)
   datos
 }
@@ -442,11 +444,11 @@ RiskValues <- function(fecha,instruments,shares,type,confidence = 0.95,period=25
   correlation <- cor(rendimientos,use = "complete.obs")
   sigmap <- sqrt(as.vector(pesos*desv) %*% correlation %*% as.vector(t(pesos*desv)))
   if(type=="bonds"){
-    con <- DBI::dbConnect(drv=RMySQL::MySQL(),host="10.1.6.81",user="mau", password="CIBANCO.00", dbname="mydb")
+    con <- DBI::dbConnect(drv=RMySQL::MySQL(),host="10.1.6.81",user="shinyapp", password="CIBANCO.00", dbname="mydb",port=3306)
     fechas <- format(fechas,'%m/%d/%Y')
     query <- paste0("SELECT nivel FROM nodos WHERE id = 'CETES-28' AND fecha in ('",paste(fechas, collapse = "','"),
                     "')")
-    y <- DBI::dbGetQuery(con, query)$nivel
+    y <- dbGetQuery(con, query)$nivel
     y <- tail(y,period)
     DBI::dbDisconnect(con)
     sigmay <- sd(y[-1]/y[-length(y)])
@@ -461,9 +463,9 @@ RiskValues <- function(fecha,instruments,shares,type,confidence = 0.95,period=25
 }
 
 Grade2Number <- function(note){
-  con <- DBI::dbConnect(drv=RMySQL::MySQL(),host="10.1.6.81",user="mau", password="CIBANCO.00", dbname="mydb")
+  con <- DBI::dbConnect(drv=RMySQL::MySQL(),host="10.1.6.81",user="shinyapp", password="CIBANCO.00", dbname="mydb",port=3306)
   query <- paste0("SELECT Calificadora,Valor FROM calificaciones WHERE Calificadora IN ('",paste(note,collapse = "','"),"')")
-  number <- DBI::dbGetQuery(con, query)
+  number <- dbGetQuery(con, query)
   DBI::dbDisconnect(con)
   return(number)
 }
