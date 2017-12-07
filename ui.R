@@ -3,11 +3,11 @@ source("funciones.R",local=FALSE)
 namesfondos <- sort(as.character(unique(fondos$Fondo)))
 namesfondos <- gsub("'","",namesfondos)
 
-estilo <- "width: 90%; height:90%; position:relative; right:150px; color:#0163A5"
-estilor <- "width: 103%; position:relative; right:170px; color:#0163A5"
-estilo1 <- "width: 100%; height:90%; position:relative; right:625%; color:#0163A5"
-estilor1 <- "width: 103%; position:relative; right:625%; color:#0163A5"
-estilow <- "position:relative; right:625%; color:#0163A5"
+estilo <- "width: 90%; height:90%; position:relative; right:30px; color:#0163A5"
+estilor <- "width: 103%; position:relative; right:30px; color:#0163A5"
+estilo1 <- "width: 120%; height:90%; position:relative; left:120px; color:#0163A5"
+estilor1 <- "width: 103%; position:relative; left:120px; color:#0163A5"
+estilow <- "position:relative; right:30px; color:#0163A5"
 
 ui <- fluidPage(
   
@@ -17,7 +17,7 @@ ui <- fluidPage(
                     @import url('https://fonts.googleapis.com/css?family=Roboto+Slab');
                     .shiny-output-error-validation {color: #0878C2; font-size: 150%}"),type="text/css",
                     '#sidebar{font-family:"Roboto Slab", serif;color: #0878C2;background-color:#FFFFFF; 
-                    width:450px}
+                    width:430px}
                     body{background-color:#F0F0F0')),
   
   headerPanel(h1("Simulador de operaciones", 
