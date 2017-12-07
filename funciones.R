@@ -1,19 +1,3 @@
-library(rdrop2)
-library(shiny)
-library(DT)
-library(dplyr)
-library(RMySQL)
-library(scales)
-library(shinyjs)
-library(tidyr)
-
-# Matando la notación científica
-options(scipen = 999)
-
-#Cargando desde Dropbox
-token <-readRDS("droptoken.rds")
-drop_acc(dtoken = token)
-
 #Instrumentos
 info_diaria <- drop_read_csv('Carpeta del equipo CIEstrategias/Instrumentos.csv',stringsAsFactors = FALSE)
 #Fondos
