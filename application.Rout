@@ -1,0 +1,46 @@
+Loading required package: shiny
+
+Listening on http://127.0.0.1:7868
+Warning: package 'rdrop2' was built under R version 3.4.2
+
+Attaching package: 'DT'
+
+The following objects are masked from 'package:shiny':
+
+    dataTableOutput, renderDataTable
+
+
+Attaching package: 'dplyr'
+
+The following objects are masked from 'package:stats':
+
+    filter, lag
+
+The following objects are masked from 'package:base':
+
+    intersect, setdiff, setequal, union
+
+Warning: package 'RMySQL' was built under R version 3.4.2
+Loading required package: DBI
+Warning: package 'DBI' was built under R version 3.4.2
+Warning: package 'scales' was built under R version 3.4.2
+Warning: package 'shinyjs' was built under R version 3.4.2
+
+Attaching package: 'shinyjs'
+
+The following object is masked from 'package:RMySQL':
+
+    show
+
+The following object is masked from 'package:DBI':
+
+    show
+
+The following object is masked from 'package:shiny':
+
+    runExample
+
+The following objects are masked from 'package:methods':
+
+    removeClass, show
+

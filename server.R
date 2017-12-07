@@ -53,10 +53,10 @@ server <- function(input, output, session) {
     if(montocompra != 0){updateNumericInput(session,"titulosg",value = 0)}
     if(tituloscompra != 0){updateNumericInput(session,"montog",value = 0)}
     
-    onclick("montov",disable("titulosv") & enable("montov"))
-    onclick("titulosv",disable("montov") & enable("titulosv"))
-    onclick("montog",disable("titulosg") & enable("montog"))
-    onclick("titulosg",disable("montog") & enable("titulosg"))
+    shinyjs::onclick("montov", shinyjs::disable("titulosv") & shinyjs::enable("montov"))
+    shinyjs::onclick("titulosv", shinyjs::disable("montov") & shinyjs::enable("titulosv"))
+    shinyjs::onclick("montog", shinyjs::disable("titulosg") & shinyjs::enable("montog"))
+    shinyjs::onclick("titulosg", shinyjs::disable("montog") & shinyjs::enable("titulosg"))
   })
   
   #Calculo del monto o titulos venta
@@ -679,13 +679,11 @@ server <- function(input, output, session) {
   deri <- paste0("No se puede invertir en derivados, valores estructurados, certificados bursátiles fiduciarios o respaldados por activos")
   msj <- c(cv,report,deri)
 
-  #output$ventav <- DT::renderDataTable({subset(vals$rowdatav,Fondo %in% input$fondo)},
-  #                                    options = list(searching = FALSE, paging = FALSE))
-  output$ventav <- DT::renderDataTable(vals$rowdatav,options = list(searching = FALSE, paging = FALSE))
+  output$ventav <- DT::renderDataTable({subset(vals$rowdatav,Fondo %in% input$fondo)},
+                                      options = list(searching = FALSE, paging = FALSE))
 
-  #output$comprac <- DT::renderDataTable({subset(vals$rowdatac,Fondo %in% input$fondo)},
-  #                                     options = list(searching = FALSE, paging = FALSE))
-  output$comprac <- DT::renderDataTable(vals$rowdatac,options = list(searching = FALSE, paging = FALSE))
+  output$comprac <- DT::renderDataTable({subset(vals$rowdatac,Fondo %in% input$fondo)},
+                                       options = list(searching = FALSE, paging = FALSE))
 
 
   options(DT.options = list(pageLength = 100))

@@ -1,4 +1,5 @@
 #Fondos
+source("funciones.R",local=FALSE)
 namesfondos <- sort(as.character(unique(fondos$Fondo)))
 namesfondos <- gsub("'","",namesfondos)
 
@@ -15,6 +16,8 @@ ui <- fluidPage(
     tags$style(HTML("
                     @import url('https://fonts.googleapis.com/css?family=Roboto+Slab');
                     .shiny-output-error-validation {color: #0878C2; font-size: 150%}"),type="text/css",
+                  ".shiny-output-error { visibility: hidden; }",
+                  ".shiny-output-error:before { visibility: hidden; }",
                     '#sidebar{font-family:"Roboto Slab", serif;color: #0878C2;background-color:#FFFFFF; 
                     width:430px}
                     body{background-color:#F0F0F0')),
