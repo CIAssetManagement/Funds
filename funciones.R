@@ -57,7 +57,7 @@ diah <-  function(fecha){
   if(entero %% 7 == 6 | entero %% 7 == 0){
     return(diah(fecha-1))
   } else {
-    if(fecha %in% festivos$dia){
+    if(fecha %in% festivos$dias){
       return(diah(fecha-1))
     } else {return(fecha)}
   }
@@ -442,7 +442,7 @@ RiskValues <- function(fecha,instruments,shares,type,confidence = 0.95,period=25
   if(type=="bonds"){
     con <- DBI::dbConnect(drv=RMySQL::MySQL(),host="10.1.6.81",user="shinyapp", password="CIBANCO.00", dbname="mydb",port=3306)
     fechas <- format(fechas,'%m/%d/%Y')
-    query <- paste0("SELECT nivel FROM nodos WHERE id = 'CETES-28' AND fecha in ('",paste(fechas, collapse = "','"),
+    query <- paste0("SELECT nivel FROM tasas WHERE id = 'CETES-28' AND fecha in ('",paste(fechas, collapse = "','"),
                     "')")
     y <- dbGetQuery(con, query)$nivel
     y <- tail(y,period)
