@@ -394,16 +394,16 @@ server <- function(input, output, session) {
       durant <- round(PortfolioDuration(diah(Sys.Date()-1),instrumentos,pesos)*360,digits=0)
       convexant <- round(PortfolioConvexity(diah(Sys.Date()-1),instrumentos,pesos),digits=0)
       valueant <- abs(RiskValues(diah(Sys.Date()-1),instrumentos,titulos,"bonds"))
-      varant <- paste0(round(valueant$VaR*100,digits=2),"%")
-      cvarant <- paste0(round(valueant$CVaR*100,digits=2),"%")
+      varant <- paste0(round(valueant$VaR*100,digits=4),"%")
+      cvarant <- paste0(round(valueant$CVaR*100,digits=4),"%")
       metrics <- data.frame(t(c(Fondo=selected_fund,Duracion=durant,Convexidad=convexant,VaR=varant,CVaR=cvarant)))
       output$inda = DT::renderDataTable({metrics},options = list(searching = FALSE, paging = FALSE))
 
     } else {
 
       valueant <- abs(RiskValues(diah(Sys.Date()-1),instrumentos,titulos,"stocks"))
-      varant <- paste0(round(valueant$VaR*100,digits=2),"%")
-      cvarant <- paste0(round(valueant$CVaR*100,digits=2),"%")
+      varant <- paste0(round(valueant$VaR*100,digits=4),"%")
+      cvarant <- paste0(round(valueant$CVaR*100,digits=4),"%")
       metrics <- data.frame(t(c(Fondo=selected_fund)))
       metrics <- data.frame(t(c(Fondo=selected_fund,VaR=varant,CVaR=cvarant)))
       output$inda = DT::renderDataTable({metrics},options = list(searching = FALSE, paging = FALSE))
@@ -450,15 +450,15 @@ server <- function(input, output, session) {
       durdes <- round(PortfolioDuration(diah(Sys.Date()-1),instrumentos,pesos)*360,digits=0)
       convexdes <- round(PortfolioConvexity(diah(Sys.Date()-1),instrumentos,pesos),digits=0)
       valuesdes <- abs(RiskValues(diah(Sys.Date()-1),instrumentos,titulos, "bonds"))
-      vardes <- paste0(round(valuesdes$VaR*100,digits=2),"%")
-      cvardes <- paste0(round(valuesdes$CVaR*100,digits=2),"%")
+      vardes <- paste0(round(valuesdes$VaR*100,digits=4),"%")
+      cvardes <- paste0(round(valuesdes$CVaR*100,digits=4),"%")
       metricsd <- data.frame(t(c(Fondo=selected_fund,Duracion=durdes,Convexidad=convexdes,VaR=vardes,CVaR=cvardes)))
 
     } else {
 
       valuedes <- abs(RiskValues(diah(Sys.Date()-1),instrumentos,titulos,"stocks"))
-      vardes <- paste0(round(valuedes$VaR*100,digits=2),"%")
-      cvardes <- paste0(round(valuedes$CVaR*100,digits=2),"%")
+      vardes <- paste0(round(valuedes$VaR*100,digits=4),"%")
+      cvardes <- paste0(round(valuedes$CVaR*100,digits=4),"%")
       metricsd <- data.frame(t(c(Fondo=selected_fund,VaR=vardes,CVaR=cvardes)))
     }
     if(vals$ValuesAtRisk == TRUE)
@@ -526,9 +526,10 @@ server <- function(input, output, session) {
     advert <- c(advert,error)
 
     if(selected_fund == "+CIPLUS"){
+      ciplusf <- fundb %>% filter(Instrumento == "EFECTIVO" & Fondo == selected_fund)
       rowindex <- which(minimo$limiteminimo == "venc")
       indicesvenc <- as.numeric(funddb$DiasxVencer) < 93
-      venc <- sum(funddb$Porcentaje[indicesvenc],na.rm = TRUE)
+      venc <- sum(funddb$Porcentaje[indicesvenc],na.rm = TRUE)+ciplusf$Porcentaje
       error <- ifelse(venc < as.numeric(as.character(minimo[rowindex,colindex])),
                       paste0("Porcentaje de emisoras con vencimiento menor a 3 meses por debajo del límite
                              requerido de: ",
