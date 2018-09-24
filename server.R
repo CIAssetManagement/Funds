@@ -160,7 +160,7 @@ server <- function(input, output, session) {
 
   #Data frame foto actual Fondos
   instrumento <- paste0(fondos$TV,"-",fondos$Emisora,"-",fondos$Serie)
-  instrumento <- ifelse(instrumento == " -TOTALES- ","TOTALES",instrumento)
+  instrumento <- ifelse(instrumento == "-TOTALES-","TOTALES",instrumento)
   #dfunda <- fondos
   #colnames(dfunda) <- c("I","Fondo","TV","Emisora","Serie","Titulos","Monto")
   #dfunda$Instrumento <- as.character(instrumento)
@@ -388,22 +388,30 @@ server <- function(input, output, session) {
     indicese <- dfunda$Fondo %in% selected_fund
     indicese2 <- dfunda$Instrumento %in% "EFECTIVO"
     indexe <- ifelse(indicese == TRUE, indicese2,indicese)
+    
+    efectivo <- dfunda$Monto[indexe]
+    if(selected_fund == "+CIUSD"){
+      indiceschd <- which(substr(instrumentos,1,3) == "CHD")
+      chequera <- sum(fondo$Monto[indiceschd])
+    } else {
+      chequera <- 0
+    }
 
     if (selected_fund %in% fondos){
 
       durant <- round(PortfolioDuration(diah(Sys.Date()-1),instrumentos,pesos)*360,digits=0)
       convexant <- round(PortfolioConvexity(diah(Sys.Date()-1),instrumentos,pesos),digits=0)
-      valueant <- abs(RiskValues(diah(Sys.Date()-1),instrumentos,titulos,"bonds"))
-      varant <- paste0(round(valueant$VaR*100,digits=4),"%")
-      cvarant <- paste0(round(valueant$CVaR*100,digits=4),"%")
+      valueant <- abs(RiskValues(diah(Sys.Date()-1),instrumentos,titulos,efectivo,chequera))
+      varant <- paste0(round(valueant$VaR,digits=3),"%")
+      cvarant <- paste0(round(valueant$CVaR,digits=3),"%")
       metrics <- data.frame(t(c(Fondo=selected_fund,Duracion=durant,Convexidad=convexant,VaR=varant,CVaR=cvarant)))
       output$inda = DT::renderDataTable({metrics},options = list(searching = FALSE, paging = FALSE))
 
     } else {
 
-      valueant <- abs(RiskValues(diah(Sys.Date()-1),instrumentos,titulos,"stocks"))
-      varant <- paste0(round(valueant$VaR*100,digits=4),"%")
-      cvarant <- paste0(round(valueant$CVaR*100,digits=4),"%")
+      valueant <- abs(RiskValues(diah(Sys.Date()-1),instrumentos,titulos,efectivo,chequera))
+      varant <- paste0(round(valueant$VaR,digits=3),"%")
+      cvarant <- paste0(round(valueant$CVaR,digits=3),"%")
       metrics <- data.frame(t(c(Fondo=selected_fund)))
       metrics <- data.frame(t(c(Fondo=selected_fund,VaR=varant,CVaR=cvarant)))
       output$inda = DT::renderDataTable({metrics},options = list(searching = FALSE, paging = FALSE))
@@ -444,21 +452,29 @@ server <- function(input, output, session) {
     indicese <- fundb$Fondo %in% selected_fund
     indicese2 <- fundb$Instrumento %in% "EFECTIVO"
     indexe <- ifelse(indicese == TRUE, indicese2,indicese)
+    
+    efectivo <- fundb$Monto[indexe]
+    if(selected_fund == "+CIUSD"){
+      indiceschd <- which(substr(instrumentos,1,3) == "CHD")
+      chequera <- sum(fondo$Monto[indiceschd])
+    } else {
+      chequera <- 0
+    }
 
     if (selected_fund %in% fondoss){
 
       durdes <- round(PortfolioDuration(diah(Sys.Date()-1),instrumentos,pesos)*360,digits=0)
       convexdes <- round(PortfolioConvexity(diah(Sys.Date()-1),instrumentos,pesos),digits=0)
-      valuesdes <- abs(RiskValues(diah(Sys.Date()-1),instrumentos,titulos, "bonds"))
-      vardes <- paste0(round(valuesdes$VaR*100,digits=4),"%")
-      cvardes <- paste0(round(valuesdes$CVaR*100,digits=4),"%")
+      valuesdes <- abs(RiskValues(diah(Sys.Date()-1),instrumentos,titulos,efectivo,chequera))
+      vardes <- paste0(round(valuesdes$VaR,digits=3),"%")
+      cvardes <- paste0(round(valuesdes$CVaR,digits=3),"%")
       metricsd <- data.frame(t(c(Fondo=selected_fund,Duracion=durdes,Convexidad=convexdes,VaR=vardes,CVaR=cvardes)))
 
     } else {
 
-      valuedes <- abs(RiskValues(diah(Sys.Date()-1),instrumentos,titulos,"stocks"))
-      vardes <- paste0(round(valuedes$VaR*100,digits=4),"%")
-      cvardes <- paste0(round(valuedes$CVaR*100,digits=4),"%")
+      valuedes <- abs(RiskValues(diah(Sys.Date()-1),instrumentos,titulos,efectivo,chequera))
+      vardes <- paste0(round(valuedes$VaR,digits=3),"%")
+      cvardes <- paste0(round(valuedes$CVaR,digits=3),"%")
       metricsd <- data.frame(t(c(Fondo=selected_fund,VaR=vardes,CVaR=cvardes)))
     }
     if(vals$ValuesAtRisk == TRUE)
@@ -498,7 +514,14 @@ server <- function(input, output, session) {
     indicese <- fundb$Fondo %in% selected_fund
     indicese2 <- fundb$Instrumento %in% "EFECTIVO"
     indexe <- ifelse(indicese == TRUE, indicese2,indicese)
-    cash <- ifelse(selected_fund=="+CIUSD",0,fundb$Monto[indexe])
+    efectivo <- fundb$Monto[indexe]
+    
+    if(selected_fund == "+CIUSD"){
+      indiceschd <- which(substr(instrumentos,1,3) == "CHD")
+      chequera <- sum(funddb$Monto[indiceschd])
+    } else {
+      chequera <- 0
+    }
 
     #Para fácil realización
     rowindex <- which(minimo$limiteminimo == "facilrealizacion")
@@ -633,15 +656,11 @@ server <- function(input, output, session) {
     }
 
     #Para el VaR
-    fondoss <- c("+CIGUB","+CIGUMP","+CIGULP","+CIPLUS")
     rowindex <- which(maximo$limitemaximo == "var")
-    if(selected_fund %in% fondoss)
-      valuea <- abs(RiskValues(diah(Sys.Date()-1),instrumentos,titulos,"bonds")$VaR)
-    else
-      valuea <- abs(RiskValues(diah(Sys.Date()-1),instrumentos,titulos,"stocks")$VaR)
+    valuea <- abs(RiskValues(diah(Sys.Date()-1),instrumentos,titulos,efectivo,chequera)$VaR)
     error <- ifelse(valuea > as.numeric(as.character(maximo[rowindex,colindex])),
                     paste0("VaR superior al límite requerido de: ",
-                           round(maximo[rowindex,colindex]*100,digits=2),"%"),NA)
+                           round(maximo[rowindex,colindex],digits=2),"%"),NA)
     advert <- c(advert,error)
 
     #Para las calificaciones
